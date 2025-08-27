@@ -1,0 +1,87 @@
+# .NET Core
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Visual Studio
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# User-specific files
+*.rsuser
+*.sln.ide
+
+# Auto-generated files
+Generated_Code/
+
+# Logs
+*.log
+
+# NPM packages
+node_modules/
+
+# Environment variables
+.env
+
+# Publish output
+publish/
+
+# Backup & report files
+*.bak
+*.dmp
+*.mdf
+*.ldf
+*.ndf
+*.rdl.data
+*.rdl.designer.cs
+*.rdl.lan
+*.rdl.layout
+*.rdl.layout.xml
+*.rdl.xml
+*.rptproj.user
+*.trx
+*.userprefs
+
+# Resharper
+_ReSharper.Caches/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# VS Code directories
+.vscode/
+
+# Local History for JetBrains IDEs
+.idea/
+
+# Rider
+.idea/
+*.sln.iml
+
+# DotNet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Core
+wwwroot/
