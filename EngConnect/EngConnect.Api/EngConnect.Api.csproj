@@ -22,10 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\EngConnect.Services\EngConnect.Services.csproj">
       <Private>True</Private>
     </ProjectReference>
