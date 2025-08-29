@@ -3,6 +3,7 @@ using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddHttpContextAccessor(); // To access HttpContext for user info
+builder.Services.Scan(scan =>
+    scan.FromAssemblies(
+        Assembly.GetExecutingAssembly(), // Main project assembly
+        //Assembly.GetAssembly(typeof(UserContextService))!, // Services project
+        Assembly.GetAssembly(typeof(UnitOfWork))! // Data project
+    )
+    .AddClasses(classes => classes.Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")))
+    .AsImplementedInterfaces()
+    .WithScopedLifetime());
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -44,6 +54,14 @@ builder.Services.AddSwaggerGen(options =>
 // Configure DbContext.
 builder.Services.AddDbContext<EngConnectContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configure Identity
+builder.Services.AddIdentityConfiguration();
+
+// Configure Authentication (JWT)
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
+builder.Services.AddAuthorization();
+
 // Add CORS services.
 builder.Services.AddCors(options =>
 {
@@ -72,6 +90,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
