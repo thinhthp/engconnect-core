@@ -1,6 +1,7 @@
 using EngConnect.Api.Extensions;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -15,7 +16,7 @@ builder.Services.AddHttpContextAccessor(); // To access HttpContext for user inf
 builder.Services.Scan(scan =>
     scan.FromAssemblies(
         Assembly.GetExecutingAssembly(), // Main project assembly
-        //Assembly.GetAssembly(typeof(UserContextService))!, // Services project
+        Assembly.GetAssembly(typeof(UserContextService))!, // Services project
         Assembly.GetAssembly(typeof(UnitOfWork))! // Data project
     )
     .AddClasses(classes => classes.Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")))

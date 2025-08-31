@@ -18,8 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="DTOs\" />
-	  <Folder Include="Services\" />
+	  <Folder Include="Services\User\" />
 	</ItemGroup>
 	
 </Project>
