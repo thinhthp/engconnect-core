@@ -26,7 +26,7 @@ namespace EngConnect.Api.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("register")]
+        [HttpPost("register/student")]
         public async Task<IActionResult> Register([FromBody] Services.DTOs.Account.RegisterRequest request)
         {
             if (!ModelState.IsValid)
@@ -46,6 +46,46 @@ namespace EngConnect.Api.Controllers
             {
                 //Add Role
                 await _userManager.AddToRoleAsync(user, "Student");
+
+                //Mapping to DTO
+                UserResponse response = new UserResponse
+                {
+                    Id = user.Id,
+                    Name = user.UserName,
+                    Email = user.Email,
+                    Phone = user.PhoneNumber,
+                    IsActive = user.IsActive,
+                    CreateDate = user.CreatedAt,
+                    UpdateDate = user.UpdateDate,
+                    CreateBy = user.CreateBy,
+                    UpdateBy = user.UpdateBy
+                };
+                return StatusCode(StatusCodes.Status201Created, new { response, message = "User registered successfully!" });
+            }
+
+            return BadRequest(result.Errors);
+        }
+
+        [HttpPost("register/tutor")]
+        public async Task<IActionResult> RegisterTutor([FromBody] Services.DTOs.Account.RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            //Create user
+            ApplicationUser user = new ApplicationUser
+            {
+                UserName = request.Name,
+                Email = request.Email,
+                PhoneNumber = request.Phone,
+            };
+
+            IdentityResult result = await _userManager.CreateAsync(user, request.Password!);
+
+            if (result.Succeeded)
+            {
+                //Add Role
+                await _userManager.AddToRoleAsync(user, "Tutor");
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
