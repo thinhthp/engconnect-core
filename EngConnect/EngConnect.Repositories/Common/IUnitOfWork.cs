@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EngConnect.Repositories.Repositories.TutorProfile;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,6 @@ namespace EngConnect.Repositories.Common
 
         // ISomethingRepository SomethingRepository { get; }
         // Right here baby
+        ITutorProfileRepository TutorProfileRepository { get; }
     }
 }
