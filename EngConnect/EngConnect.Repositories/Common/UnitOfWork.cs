@@ -1,4 +1,5 @@
 ﻿using EngConnect.Repositories.Data;
+using EngConnect.Repositories.Repositories.TutorProfile;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace EngConnect.Repositories.Common
 
         // public ISomethingRepository SomethingRepository { get; private set; }
         // Right here baby
-
+        public ITutorProfileRepository TutorProfileRepository { get; private set; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -22,6 +23,7 @@ namespace EngConnect.Repositories.Common
 
             // SomethingRepository = new SomethingRepository(_context);
             // Right here baby
+            TutorProfileRepository = new TutorProfileRepository(_context);
 
         }
 
