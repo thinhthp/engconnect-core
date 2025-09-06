@@ -1,4 +1,5 @@
 ﻿using EngConnect.Repositories.Repositories.Courses;
+using EngConnect.Repositories.Repositories.Lessons;
 using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
 using System;
@@ -18,5 +19,6 @@ namespace EngConnect.Repositories.Common
         ITutorProfileRepository TutorProfileRepository { get; }
         ICourseRepository CourseRepository { get; }
         ICourseModuleRepository CourseModuleRepository { get; }
-    }
+        ILessonRepository LessonRepository { get; }
+        }
 }
