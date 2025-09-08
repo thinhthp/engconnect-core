@@ -1,5 +1,7 @@
 ﻿using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.Courses;
+using EngConnect.Repositories.Repositories.Lessons;
+using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -27,6 +29,8 @@ namespace EngConnect.Repositories.Common
         public IAssignmentRepository AssignmentRepository { get; private set; }
         public ISessionRepository SessionRepository { get; }
 
+        public ICourseModuleRepository CourseModuleRepository { get; private set; }
+        public ILessonRepository LessonRepository { get; private set; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -40,6 +44,9 @@ namespace EngConnect.Repositories.Common
             SubmissionRepository = new SubmissionRepository(_context);
             AssignmentRepository = new AssignmentRepository(_context);
             SessionRepository = new SessionReposository(_context);
+            CourseModuleRepository = new CourseModuleRepository(_context);
+            LessonRepository = new LessonRepository(_context);
+
         }
 
         public async Task<int> SaveChangesAsync()

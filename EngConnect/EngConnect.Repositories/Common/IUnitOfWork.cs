@@ -1,4 +1,6 @@
 ﻿using EngConnect.Repositories.Repositories.Courses;
+using EngConnect.Repositories.Repositories.Lessons;
+using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
 using System;
 using System.Collections.Generic;
@@ -20,6 +22,9 @@ namespace EngConnect.Repositories.Common
         // Right here baby
         ITutorProfileRepository TutorProfileRepository { get; }
         ICourseRepository CourseRepository { get; }
+        ICourseModuleRepository CourseModuleRepository { get; }
+        ILessonRepository LessonRepository { get; }
+        }
 
         IEnrolmentRepository EnrolmentRepository { get; }
         ISubmissionRepository SubmissionRepository { get; }
