@@ -30,7 +30,7 @@ namespace EngConnect.Repositories.Repositories.Courses
                 .Include(c => c.Tutor)
                 .FirstOrDefaultAsync(c => c.CourseId == id, cancellationToken);
         }
-
+        
         public async Task<(IReadOnlyList<Course> Items, int TotalCount)> QueryAsync(
             CourseQueryParameters parameters,
             CancellationToken cancellationToken = default)
@@ -104,5 +104,7 @@ namespace EngConnect.Repositories.Repositories.Courses
 
             return (items, total);
         }
+
+      
     }
 }

@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Enrollments;
+using EngConnect.Repositories.Repositories.Sessions;
+using EngConnect.Repositories.Repositories.Submissions;
 
 namespace EngConnect.Repositories.Common
 {
@@ -16,5 +20,10 @@ namespace EngConnect.Repositories.Common
         // Right here baby
         ITutorProfileRepository TutorProfileRepository { get; }
         ICourseRepository CourseRepository { get; }
-        }
+
+        IEnrolmentRepository EnrolmentRepository { get; }
+        ISubmissionRepository SubmissionRepository { get; }
+        IAssignmentRepository AssignmentRepository { get; }
+        ISessionRepository SessionRepository { get; }
+    }
 }
