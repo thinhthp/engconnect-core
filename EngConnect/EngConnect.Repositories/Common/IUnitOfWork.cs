@@ -2,6 +2,8 @@
 using EngConnect.Repositories.Repositories.Lessons;
 using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
+using EngConnect.Repositories.Repositories.TutorSchedules;
+using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,5 +22,7 @@ namespace EngConnect.Repositories.Common
         ICourseRepository CourseRepository { get; }
         ICourseModuleRepository CourseModuleRepository { get; }
         ILessonRepository LessonRepository { get; }
-        }
+        ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; }
+        ITutorScheduleRepository TutorScheduleRepository { get; }
+    }
 }
