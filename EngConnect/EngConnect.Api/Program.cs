@@ -1,6 +1,7 @@
 using EngConnect.Api.Extensions;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -19,9 +20,12 @@ builder.Services.Scan(scan =>
         Assembly.GetAssembly(typeof(UserContextService))!, // Services project
         Assembly.GetAssembly(typeof(UnitOfWork))! // Data project
     )
-    .AddClasses(classes => classes.Where(t => t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")))
+    .AddClasses(classes => classes.Where(t =>
+    (t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")) &&
+    !typeof(IHostedService).IsAssignableFrom(t))) // exclude hosted services
     .AsImplementedInterfaces()
     .WithScopedLifetime());
+builder.Services.AddHostedService<WeeklyScheduleGenerationHostedService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
