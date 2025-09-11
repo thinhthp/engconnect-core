@@ -3,6 +3,8 @@ using EngConnect.Repositories.Repositories.Courses;
 using EngConnect.Repositories.Repositories.Lessons;
 using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
+using EngConnect.Repositories.Repositories.TutorSchedules;
+using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -31,6 +33,8 @@ namespace EngConnect.Repositories.Common
 
         public ICourseModuleRepository CourseModuleRepository { get; private set; }
         public ILessonRepository LessonRepository { get; private set; }
+        public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; private set; }
+        public ITutorScheduleRepository TutorScheduleRepository { get; private set; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -46,6 +50,8 @@ namespace EngConnect.Repositories.Common
             SessionRepository = new SessionReposository(_context);
             CourseModuleRepository = new CourseModuleRepository(_context);
             LessonRepository = new LessonRepository(_context);
+            TutorWeeklyAvailabilityRepository = new TutorWeeklyAvailabilityRepository(_context);
+            TutorScheduleRepository = new TutorScheduleRepository(_context);
 
         }
 
