@@ -9,5 +9,7 @@ public interface ISessionRepository
     Task<List<Session>> GetAllSession(CancellationToken cancellationToken = default);
     Task<Session> GetById(int id, CancellationToken cancellationToken = default);
     void UpdateSession(Session session, CancellationToken cancellationToken = default);
+    Task<int> CountCancelledSessionByEnrollmentId(int id, CancellationToken cancellationToken = default);
+    Task<Session> GetLastSessionByEnrollmentId(int id, CancellationToken cancellationToken = default);
 
 }

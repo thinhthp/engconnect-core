@@ -24,7 +24,7 @@ namespace EngConnect.Repositories.Common
         ICourseRepository CourseRepository { get; }
         ICourseModuleRepository CourseModuleRepository { get; }
         ILessonRepository LessonRepository { get; }
-        }
+        
 
         IEnrolmentRepository EnrolmentRepository { get; }
         ISubmissionRepository SubmissionRepository { get; }

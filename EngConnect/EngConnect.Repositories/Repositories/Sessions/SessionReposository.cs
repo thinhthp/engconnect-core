@@ -40,4 +40,16 @@ public class SessionReposository : ISessionRepository
     {
         _context.Sessions.Update(session);
     }
+
+    public async Task<int> CountCancelledSessionByEnrollmentId(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Sessions.Include(x => x.Enrollment)
+            .Where(x => x.EnrollmentId == id && x.Status == "Cancelled").CountAsync(cancellationToken);
+    }
+
+    public async Task<Session> GetLastSessionByEnrollmentId(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Sessions.Include(x => x.Enrollment).Where(x => x.EnrollmentId == id)
+            .OrderByDescending(x => x.SessionNumber).FirstOrDefaultAsync(cancellationToken);
+    }
 }

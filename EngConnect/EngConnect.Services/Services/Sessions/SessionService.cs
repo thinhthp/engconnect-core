@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Services.DTOs.Sessions;
@@ -13,44 +14,46 @@ public class SessionService : ISessionService
         _unitOfWork = unitOfWork;
     }
 
-    // public async Task<SessionDTO> CreateSession(CreateSessionRequest request,
-    //     CancellationToken cancellationToken = default)
-    // {
-    //     // var entity = new Session()
-    //     // {
-    //     //     EnrollmentId = request.EnrollmentId,
-    //     //     ScheduleId = request.ScheduleId,
-    //     //     SessionNumber = request.SessionNumber,
-    //     //     StartTime = request.StartTime,
-    //     //     EndTime = request.EndTime,
-    //     //     MeetingLink = request.MeetingLink,
-    //     //     Note = request.Note,
-    //     //     Status = "Booked",
-    //     //     IsActive = true,
-    //     //     CreatedAt = DateTime.UtcNow,
-    //     //
-    //     //
-    //     // };
-    //     //
-    //     // await _unitOfWork.SessionRepository.CreateSession(entity, cancellationToken);
-    //     // await _unitOfWork.SaveChangesAsync();
-    //     //
-    //     // var dto = new SessionDTO()
-    //     // {
-    //     //     SessionId = entity.SessionId,
-    //     //     EnrollmentId = entity.EnrollmentId,
-    //     //     ScheduleId = entity.ScheduleId,
-    //     //     SessionNumber = entity.SessionNumber,
-    //     //     StartTime = entity.StartTime,
-    //     //     EndTime = entity.EndTime,
-    //     //     MeetingLink = entity.MeetingLink,
-    //     //     Note = entity.Note,
-    //     //     Status = entity.Status,
-    //     //     IsActive = entity.IsActive
-    //     // };
-    //     //
-    //     // return dto;
-    // }
+    public async Task<SessionDTO> CreateSession(CreateSessionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var lastSession = await _unitOfWork.SessionRepository.GetLastSessionByEnrollmentId(request.EnrollmentId,cancellationToken);
+        var nextSession = lastSession.SessionNumber + 1;
+        var entity = new Session()
+        {
+            EnrollmentId = request.EnrollmentId,
+            ScheduleId = request.ScheduleId,
+            SessionNumber = request.SessionNumber,
+            StartTime = request.StartTime,
+            EndTime = request.EndTime,
+            MeetingLink = request.MeetingLink,
+            Note = request.Note,
+            Status = "Booked",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+        
+        
+        };
+        
+        await _unitOfWork.SessionRepository.CreateSession(entity, cancellationToken);
+        await _unitOfWork.SaveChangesAsync();
+        
+        var dto = new SessionDTO()
+        {
+            SessionId = entity.SessionId,
+            EnrollmentId = entity.EnrollmentId,
+            ScheduleId = entity.ScheduleId,
+            SessionNumber = entity.SessionNumber,
+            StartTime = entity.StartTime,
+            EndTime = entity.EndTime,
+            MeetingLink = entity.MeetingLink,
+            Note = entity.Note,
+            Status = entity.Status,
+            IsActive = entity.IsActive
+        };
+        
+        return dto;
+    }
 
 
 public async Task<SessionDTO> CancelSession(int sessionId, CancellationToken cancellationToken = default)
@@ -64,8 +67,10 @@ public async Task<SessionDTO> CancelSession(int sessionId, CancellationToken can
         var enrollment = await _unitOfWork.EnrolmentRepository.GetById(session.EnrollmentId,cancellationToken);
         var now = DateTime.UtcNow;
         var time = session.StartTime - now;
-        bool isBefore12h = time.TotalHours >= 12;
-        if (isBefore12h)
+        var count = await _unitOfWork.SessionRepository.CountCancelledSessionByEnrollmentId(session.EnrollmentId);
+        bool isAfter12h = time.TotalHours <= 12 && time.TotalHours >= 0;
+        bool exceededTwoCancel = count > 2;
+        if (isAfter12h || exceededTwoCancel)
         {
             if (enrollment.SessionsRemaining <= 0)
             {
