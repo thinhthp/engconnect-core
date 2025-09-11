@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+**/*.swp
+**/node_modules/
+.git
+.gitignore
+README.md
+.env
+*.ps1
+*.cmd
