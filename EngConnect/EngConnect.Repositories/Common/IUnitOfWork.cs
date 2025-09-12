@@ -2,8 +2,7 @@
 using EngConnect.Repositories.Repositories.Lessons;
 using EngConnect.Repositories.Repositories.Modules;
 using EngConnect.Repositories.Repositories.TutorProfile;
-using EngConnect.Repositories.Repositories.TutorSchedules;
-using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +12,8 @@ using EngConnect.Repositories.Repositories.Assignments;
 using EngConnect.Repositories.Repositories.Enrollments;
 using EngConnect.Repositories.Repositories.Sessions;
 using EngConnect.Repositories.Repositories.Submissions;
+using EngConnect.Repositories.Repositories.TutorSchedules;
+using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 
 namespace EngConnect.Repositories.Common
 {
@@ -32,7 +33,7 @@ namespace EngConnect.Repositories.Common
         ISubmissionRepository SubmissionRepository { get; }
         IAssignmentRepository AssignmentRepository { get; }
         ISessionRepository SessionRepository { get; }
-    }
+    
         ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; }
         ITutorScheduleRepository TutorScheduleRepository { get; }
     }
