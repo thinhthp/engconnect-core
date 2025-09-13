@@ -17,15 +17,17 @@ public class SessionService : ISessionService
     public async Task<SessionDTO> CreateSession(CreateSessionRequest request,
         CancellationToken cancellationToken = default)
     {
+        var tutorschedule = await _unitOfWork.TutorScheduleRepository.GetById(request.ScheduleId);
         var lastSession = await _unitOfWork.SessionRepository.GetLastSessionByEnrollmentId(request.EnrollmentId,cancellationToken);
-        var nextSession = lastSession.SessionNumber + 1;
+       
+        var nextSession = (lastSession?.SessionNumber ?? 0)  + 1;
         var entity = new Session()
         {
             EnrollmentId = request.EnrollmentId,
             ScheduleId = request.ScheduleId,
-            SessionNumber = request.SessionNumber,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            SessionNumber = nextSession,
+            StartTime = tutorschedule.StartTime,
+            EndTime = tutorschedule.EndTime,
             MeetingLink = request.MeetingLink,
             Note = request.Note,
             Status = "Booked",
@@ -69,8 +71,9 @@ public async Task<SessionDTO> CancelSession(int sessionId, CancellationToken can
         var time = session.StartTime - now;
         var count = await _unitOfWork.SessionRepository.CountCancelledSessionByEnrollmentId(session.EnrollmentId);
         bool isAfter12h = time.TotalHours <= 12 && time.TotalHours >= 0;
+        bool alreadyStarted  = time.TotalHours < 0; 
         bool exceededTwoCancel = count > 2;
-        if (isAfter12h || exceededTwoCancel)
+        if (isAfter12h || exceededTwoCancel || alreadyStarted)
         {
             if (enrollment.SessionsRemaining <= 0)
             {

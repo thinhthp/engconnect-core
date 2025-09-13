@@ -2,11 +2,11 @@ namespace EngConnect.Services.DTOs.Sessions;
 
 public class CreateSessionRequest
 {
-    public int SessionId { get; set; }
+   // public int SessionId { get; set; }
 
     public int EnrollmentId { get; set; }
 
-    public int? ScheduleId { get; set; }
+    public int ScheduleId { get; set; }
 
     public int SessionNumber { get; set; }
 

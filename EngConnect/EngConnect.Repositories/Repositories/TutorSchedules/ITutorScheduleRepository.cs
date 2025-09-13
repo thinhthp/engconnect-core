@@ -12,5 +12,6 @@ namespace EngConnect.Repositories.Repositories.TutorSchedules
         Task<bool> ExistsAsync(string tutorId, DateTime startUtc, DateTime endUtc, CancellationToken cancellationToken = default);
         Task AddRangeAsync(IEnumerable<TutorSchedule> items, CancellationToken cancellationToken = default);
         Task<List<TutorSchedule>> GetRangeByTutorAsync(string tutorId, DateTime fromUtc, DateTime toUtc, CancellationToken cancellationToken = default);
+        Task<TutorSchedule> GetById(int id);
     }
 }

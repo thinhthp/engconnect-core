@@ -36,5 +36,11 @@ namespace EngConnect.Repositories.Repositories.TutorSchedules
                 .OrderBy(s => s.StartTime)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<TutorSchedule> GetById(int id)
+        {
+            return await _context.TutorSchedules.Include(x => x.Tutor).Include(x => x.Availability)
+                .Include(x => x.Sessions).FirstOrDefaultAsync(x => x.ScheduleId == id);
+        }
     }
 }
