@@ -11,5 +11,8 @@ public interface ISessionRepository
     void UpdateSession(Session session, CancellationToken cancellationToken = default);
     Task<int> CountCancelledSessionByEnrollmentId(int id, CancellationToken cancellationToken = default);
     Task<Session> GetLastSessionByEnrollmentId(int id, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByScheduleId(int scheduleId, CancellationToken ct = default);
 
+    Task<int> CountBookedSessionsByEnrollmentIdAndCourseIdInPeriod(int enrollmentId, int courseId, DateTime start,
+        DateTime end, CancellationToken cancellationToken = default);
 }

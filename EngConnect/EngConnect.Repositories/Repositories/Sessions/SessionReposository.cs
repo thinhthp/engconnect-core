@@ -52,4 +52,22 @@ public class SessionReposository : ISessionRepository
         return await _context.Sessions.Include(x => x.Enrollment).Where(x => x.EnrollmentId == id)
             .OrderByDescending(x => x.SessionNumber).FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<bool> ExistsByScheduleId(int scheduleId, CancellationToken ct = default)
+    {
+        return await _context.Sessions
+            .AnyAsync(s => s.ScheduleId == scheduleId && s.IsActive == true, ct);
+    }
+
+    public async Task<int> CountBookedSessionsByEnrollmentIdAndCourseIdInPeriod(int enrollmentId, int courseId, DateTime start, DateTime end,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Sessions
+            .Where(s => s.EnrollmentId == enrollmentId
+                        && s.Status == "Booked"
+                        && s.Enrollment.CourseId == courseId
+                        && s.StartTime >= start
+                        && s.StartTime < end)
+            .CountAsync(cancellationToken);
+    }
 }

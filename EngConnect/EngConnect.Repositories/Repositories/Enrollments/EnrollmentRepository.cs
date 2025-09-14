@@ -32,6 +32,11 @@ public class EnrollmentRepository : IEnrolmentRepository
 
     public async Task<Enrollment> GetById(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Enrollments.FirstOrDefaultAsync(x => x.Id == id);
+        return await _context.Enrollments.Include(x=>x.Course).ThenInclude(x=>x.Tutor).FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public  void Update(Enrollment enrollment, CancellationToken cancellationToken = default)
+    {
+         _context.Enrollments.Update(enrollment);
     }
 }
