@@ -36,5 +36,26 @@ namespace EngConnect.Repositories.Repositories.TutorSchedules
                 .OrderBy(s => s.StartTime)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<TutorSchedule> GetById(int id)
+        {
+            return await _context.TutorSchedules.Include(x => x.Tutor).Include(x => x.Availability)
+                .Include(x => x.Sessions).FirstOrDefaultAsync(x => x.ScheduleId == id);
+        }
+
+        public async Task<TutorSchedule?> CheckValidSchedule(int enrollmentId, int scheduleId, CancellationToken cancellationToken =default)
+        {
+            return await _context.TutorSchedules
+                .Where(s => s.ScheduleId == scheduleId)
+                .Where(s=>_context.Enrollments.Where(x => x.Id == enrollmentId).Select(x => x.Course.TutorId)
+                    .Contains(s.TutorId)).FirstOrDefaultAsync(cancellationToken);
+           
+        }
+
+        public  void Update(TutorSchedule tutorSchedule, CancellationToken cancellationToken = default)
+        {
+             _context.TutorSchedules.Update(tutorSchedule);
+            
+        }
     }
 }
