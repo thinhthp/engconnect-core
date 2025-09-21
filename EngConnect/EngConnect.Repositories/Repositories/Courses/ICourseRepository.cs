@@ -13,5 +13,6 @@ namespace EngConnect.Repositories.Repositories.Courses
         Task<Course> AddAsync(Course course, CancellationToken cancellationToken = default);
         Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<(IReadOnlyList<Course> Items, int TotalCount)> QueryAsync(CourseQueryParameters parameters, CancellationToken cancellationToken = default);
+
     }
 }

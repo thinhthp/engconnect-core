@@ -11,6 +11,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Enrollments;
+using EngConnect.Repositories.Repositories.Sessions;
+using EngConnect.Repositories.Repositories.Submissions;
 
 namespace EngConnect.Repositories.Common
 {
@@ -22,6 +26,11 @@ namespace EngConnect.Repositories.Common
         // Right here baby
         public ITutorProfileRepository TutorProfileRepository { get; private set; }
         public ICourseRepository CourseRepository { get; private set; }
+        public IEnrolmentRepository EnrolmentRepository { get; private set; }
+        public ISubmissionRepository SubmissionRepository { get; private set; }
+        public IAssignmentRepository AssignmentRepository { get; private set; }
+        public ISessionRepository SessionRepository { get; }
+
         public ICourseModuleRepository CourseModuleRepository { get; private set; }
         public ILessonRepository LessonRepository { get; private set; }
         public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; private set; }
@@ -35,6 +44,10 @@ namespace EngConnect.Repositories.Common
             // Right here baby
             TutorProfileRepository = new TutorProfileRepository(_context);
             CourseRepository = new CourseRepository(_context);
+            EnrolmentRepository = new EnrollmentRepository(_context);
+            SubmissionRepository = new SubmissionRepository(_context);
+            AssignmentRepository = new AssignmentRepository(_context);
+            SessionRepository = new SessionReposository(_context);
             CourseModuleRepository = new CourseModuleRepository(_context);
             LessonRepository = new LessonRepository(_context);
             TutorWeeklyAvailabilityRepository = new TutorWeeklyAvailabilityRepository(_context);
