@@ -1,11 +1,13 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Services.DTOs.Account;
+using EngConnect.Services.Services.Mail;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -18,12 +20,14 @@ namespace EngConnect.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         [HttpPost("register/student")]
@@ -46,6 +50,23 @@ namespace EngConnect.Api.Controllers
             {
                 //Add Role
                 await _userManager.AddToRoleAsync(user, "Student");
+
+                // Generate and send confirmation email
+                string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                string encodedToken = WebUtility.UrlEncode(token);
+                string? callbackUrl = Url.Action(
+                    nameof(ConfirmEmail),
+                    "Account",
+                    new { userId = user.Id, token = encodedToken },
+                    protocol: Request.Scheme);
+
+                string html = $@"
+                    <p>Hi {WebUtility.HtmlEncode(user.UserName)},</p>
+                    <p>Thanks for registering at EngConnect. Please confirm your email by clicking the link below:</p>
+                    <p><a href=""{callbackUrl}"">Confirm your email</a></p>
+                    <p>If you did not create this account, you can ignore this email.</p>";
+
+                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
@@ -87,6 +108,23 @@ namespace EngConnect.Api.Controllers
                 //Add Role
                 await _userManager.AddToRoleAsync(user, "Tutor");
 
+                // Generate and send confirmation email
+                string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                string encodedToken = WebUtility.UrlEncode(token);
+                string? callbackUrl = Url.Action(
+                    nameof(ConfirmEmail),
+                    "Account",
+                    new { userId = user.Id, token = encodedToken },
+                    protocol: Request.Scheme);
+
+                string html = $@"
+                    <p>Hi {WebUtility.HtmlEncode(user.UserName)},</p>
+                    <p>Thanks for registering at EngConnect. Please confirm your email by clicking the link below:</p>
+                    <p><a href=""{callbackUrl}"">Confirm your email</a></p>
+                    <p>If you did not create this account, you can ignore this email.</p>";
+
+                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
+
                 //Mapping to DTO
                 UserResponse response = new UserResponse
                 {
@@ -117,6 +155,12 @@ namespace EngConnect.Api.Controllers
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password!))
                 return Unauthorized();
 
+            //Check email confirmed
+            if (!user.EmailConfirmed)
+            {
+                return BadRequest(new { message = "Email not confirmed. Please check your inbox." });
+            }
+
             //Get role
             //IList<string> roles = await _userManager.GetRolesAsync(user);
             //var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role));
@@ -146,6 +190,34 @@ namespace EngConnect.Api.Controllers
             }
 
             return BadRequest(new { message = "Invalid email or password" });
+        }
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest("Invalid confirmation link.");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("User not found.");
+
+            string decodedToken = WebUtility.UrlDecode(token);
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+
+            if (result.Succeeded)
+            {
+                // redirect to FE
+                string? redirect = _configuration["SendGrid:ConfirmEmailRedirectUrl"];
+                if (!string.IsNullOrWhiteSpace(redirect))
+                {
+                    return Redirect($"{redirect}?success=true&email={WebUtility.UrlEncode(user.Email)}");
+                }
+
+                return Content("<html><body><h3>Email confirmed. You can close this tab and sign in.</h3></body></html>", "text/html");
+            }
+
+            return Content("<html><body><h3>Invalid or expired confirmation link.</h3></body></html>", "text/html");
         }
 
         [HttpGet("google-signin")]
@@ -181,7 +253,8 @@ namespace EngConnect.Api.Controllers
                 user = new ApplicationUser
                 {
                     UserName = email,
-                    Email = email
+                    Email = email,
+                    EmailConfirmed = true //No need to confirm email from Google
                 };
                 IdentityResult createResult = await _userManager.CreateAsync(user);
 
@@ -252,6 +325,74 @@ namespace EngConnect.Api.Controllers
             var handler = new JwtSecurityTokenHandler();
             var token = handler.CreateToken(tokenDescriptor);
             return handler.WriteToken(token);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] Services.DTOs.Account.ForgotPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(request.Email!);
+
+            // Always return 200 to prevent account enumeration
+            if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                return Ok(new { message = "If an account with that email exists, a password reset email has been sent." });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = WebUtility.UrlEncode(token);
+
+            // Link to GET endpoint that will redirect to FE
+            var callbackUrl = Url.Action(
+                nameof(BeginResetPassword),
+                "Account",
+                new { userId = user.Id, token = encodedToken },
+                protocol: Request.Scheme
+            );
+
+            string html = $@"
+        <p>We received a request to reset your EngConnect password.</p>
+        <p><a href=""{callbackUrl}"">Reset your password</a></p>
+        <p>If you didn't request this, you can safely ignore this email.</p>";
+
+            await _emailService.SendEmailAsync(user.Email!, "Reset your EngConnect password", html);
+
+            return Ok(new { message = "If an account with that email exists, a password reset email has been sent." });
+        }
+
+        // GET: redirect to frontend with the token/userId
+        [HttpGet("reset-password")]
+        public IActionResult BeginResetPassword([FromQuery] string userId, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+                return BadRequest("Invalid reset link.");
+
+            string? redirect = _configuration["SendGrid:PasswordResetRedirectUrl"];
+            if (!string.IsNullOrWhiteSpace(redirect))
+            {
+                return Redirect($"{redirect}?userId={WebUtility.UrlEncode(userId)}&token={WebUtility.UrlEncode(token)}");
+            }
+
+            return Content("<html><body><h3>Open the app to complete your password reset.</h3></body></html>", "text/html");
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] Services.DTOs.Account.ResetPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByIdAsync(request.UserId!);
+            if (user == null)
+                return BadRequest(new { message = "Invalid user." });
+
+            var decodedToken = WebUtility.UrlDecode(request.Token);
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken!, request.NewPassword!);
+
+            if (result.Succeeded)
+                return Ok(new { message = "Password has been reset successfully." });
+
+            return BadRequest(result.Errors);
         }
     }
 }
