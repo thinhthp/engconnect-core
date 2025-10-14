@@ -10,7 +10,7 @@ namespace EngConnect.Entities.Entities
     {
         public int CourseId { get; set; }
 
-        public string TutorId { get; set; }
+        public string? TutorId { get; set; }
 
         public string Title { get; set; } = null!;
 
