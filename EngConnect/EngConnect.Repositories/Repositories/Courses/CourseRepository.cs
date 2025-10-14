@@ -26,7 +26,6 @@ namespace EngConnect.Repositories.Repositories.Courses
         public async Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Courses
-                .AsNoTracking()
                 .Include(c => c.Tutor)
                 .FirstOrDefaultAsync(c => c.CourseId == id, cancellationToken);
         }

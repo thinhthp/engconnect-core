@@ -20,7 +20,6 @@ namespace EngConnect.Repositories.Repositories.TutorProfile
         public async Task<Entities.Entities.TutorProfile?> GetByTutorIdAsync(string tutorId, CancellationToken cancellationToken = default)
         {
             return await _context.TutorProfiles
-                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.TutorId == tutorId, cancellationToken);
         }
 
