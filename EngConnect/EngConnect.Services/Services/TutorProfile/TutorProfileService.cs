@@ -1,5 +1,8 @@
-﻿using EngConnect.Repositories.Common;
+﻿using EngConnect.Entities.Common;
+using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.TutorProfile.Filters;
 using EngConnect.Services.DTOs.TutorProfile;
+using EngConnect.Services.Services.TutorProfile.Filters;
 using EngConnect.Services.Services.UserContext;
 using System;
 using System.Collections.Generic;
@@ -74,5 +77,32 @@ namespace EngConnect.Services.Services.TutorProfile
             CreatedAt = p.CreatedAt,
             UpdateDate = p.UpdateDate
         };
+
+        public async Task<PagedResult<TutorProfileDTO>> GetForAdminAsync(TutorProfileSearchFilter filter, CancellationToken cancellationToken = default)
+        {
+            var repoParams = new TutorProfileQueryParameters
+            {
+                Search = filter.Search,
+                Approved = filter.Approved,
+                IsActive = filter.IsActive,
+                Language = filter.Language,
+                TutorId = filter.TutorId,
+                SortBy = filter.SortBy,
+                SortDir = filter.SortDir,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize
+            };
+
+            var (items, total) = await _unitOfWork.TutorProfileRepository.QueryAsync(repoParams, cancellationToken);
+            var dto = items.Select(Map).ToList();
+
+            return new PagedResult<TutorProfileDTO>
+            {
+                Items = dto,
+                TotalCount = total,
+                PageNumber = repoParams.PageNumber,
+                PageSize = repoParams.PageSize
+            };
+        }
     }
 }
