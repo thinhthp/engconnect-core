@@ -1,6 +1,7 @@
 using EngConnect.Api.Extensions;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Services.AI;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddHttpContextAccessor(); // To access HttpContext for user info
+builder.Services.AddHttpClient<IAIService, AIService>();
 builder.Services.Scan(scan =>
     scan.FromAssemblies(
         Assembly.GetExecutingAssembly(), // Main project assembly
@@ -22,7 +24,8 @@ builder.Services.Scan(scan =>
     )
     .AddClasses(classes => classes.Where(t =>
     (t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")) &&
-    !typeof(IHostedService).IsAssignableFrom(t))) // exclude hosted services
+    !typeof(IHostedService).IsAssignableFrom(t) &&
+    !typeof(IAIService).IsAssignableFrom(t))) // exclude services
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 builder.Services.AddHostedService<WeeklyScheduleGenerationHostedService>();
