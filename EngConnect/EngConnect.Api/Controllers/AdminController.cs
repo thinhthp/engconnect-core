@@ -1,4 +1,6 @@
 ﻿using EngConnect.Services.Services.Admin;
+using EngConnect.Services.Services.TutorProfile;
+using EngConnect.Services.Services.TutorProfile.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EngConnect.Api.Controllers
@@ -8,10 +10,12 @@ namespace EngConnect.Api.Controllers
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;
+        private readonly ITutorProfileService _tutorProfileService;
 
-        public AdminController(IAdminService adminService)
+        public AdminController(IAdminService adminService, ITutorProfileService tutorProfileService)
         {
             _adminService = adminService;
+            _tutorProfileService = tutorProfileService;
         }
 
         // [Authorize(Roles = "Admin")]
@@ -104,6 +108,37 @@ namespace EngConnect.Api.Controllers
             {
                 return Unauthorized();
             }
+        }
+
+        // [Authorize(Roles = "Admin")]
+        [HttpGet("tutors")]
+        public async Task<IActionResult> GetTutorProfiles(
+            [FromQuery] string? search,
+            [FromQuery] bool? approved,
+            [FromQuery] bool? isActive,
+            [FromQuery] string? language,
+            [FromQuery] string? tutorId,
+            [FromQuery] string? sortBy = "createdAt",
+            [FromQuery] string? sortDir = "desc",
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
+        {
+            var filter = new TutorProfileSearchFilter
+            {
+                Search = search,
+                Approved = approved,
+                IsActive = isActive,
+                Language = language,
+                TutorId = tutorId,
+                SortBy = sortBy,
+                SortDir = sortDir,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var result = await _tutorProfileService.GetForAdminAsync(filter, cancellationToken);
+            return Ok(result);
         }
     }
 }
