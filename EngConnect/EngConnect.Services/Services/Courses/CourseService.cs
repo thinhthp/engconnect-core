@@ -101,7 +101,7 @@ namespace EngConnect.Services.Services.Courses
         private static CourseDTO MapToListItem(Course c) => new()
         {
             CourseId = c.CourseId,
-            TutorId = c.TutorId,
+            TutorId = c.TutorId!,
             Title = c.Title,
             Level = c.Level,
             TotalSessions = c.TotalSessions,

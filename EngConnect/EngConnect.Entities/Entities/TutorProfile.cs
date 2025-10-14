@@ -8,7 +8,7 @@ namespace EngConnect.Entities.Entities
 {
     public class TutorProfile
     {
-        public string TutorId { get; set; }
+        public string? TutorId { get; set; }
 
         public int? ExperienceYears { get; set; }
 

@@ -62,7 +62,7 @@ namespace EngConnect.Services.Services.TutorProfile
 
         private static TutorProfileDTO Map(Entities.Entities.TutorProfile p) => new()
         {
-            TutorId = p.TutorId,
+            TutorId = p.TutorId!,
             ExperienceYears = p.ExperienceYears,
             Bio = p.Bio,
             Language = p.Language,
