@@ -15,6 +15,8 @@ using EngConnect.Repositories.Repositories.Assignments;
 using EngConnect.Repositories.Repositories.Enrollments;
 using EngConnect.Repositories.Repositories.Sessions;
 using EngConnect.Repositories.Repositories.Submissions;
+using EngConnect.Repositories.Repositories.Orders;
+using EngConnect.Repositories.Repositories.Payments;
 
 namespace EngConnect.Repositories.Common
 {
@@ -30,11 +32,12 @@ namespace EngConnect.Repositories.Common
         public ISubmissionRepository SubmissionRepository { get; private set; }
         public IAssignmentRepository AssignmentRepository { get; private set; }
         public ISessionRepository SessionRepository { get; }
-
+        public IOrderRepository OrderRepository { get; private set; }
         public ICourseModuleRepository CourseModuleRepository { get; private set; }
         public ILessonRepository LessonRepository { get; private set; }
         public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; private set; }
         public ITutorScheduleRepository TutorScheduleRepository { get; private set; }
+        public IPaymentRepository PaymentRepository { get; private set; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -52,7 +55,8 @@ namespace EngConnect.Repositories.Common
             LessonRepository = new LessonRepository(_context);
             TutorWeeklyAvailabilityRepository = new TutorWeeklyAvailabilityRepository(_context);
             TutorScheduleRepository = new TutorScheduleRepository(_context);
-
+            OrderRepository = new OrderRepository(_context);
+            PaymentRepository = new PaymentRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()
