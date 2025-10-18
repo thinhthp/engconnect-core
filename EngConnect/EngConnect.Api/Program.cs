@@ -1,16 +1,28 @@
 using EngConnect.Api.Extensions;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Integrations.PayOS;
 using EngConnect.Services.Services.AI;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Net.payOS;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+// PayOS configuration
+builder.Services.Configure<PayOSOptions>(builder.Configuration.GetSection("PayOS"));
+builder.Services.AddSingleton(sp =>
+{
+    var opts = sp.GetRequiredService<IOptions<PayOSOptions>>().Value;
+    return new PayOS(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
+});
+builder.Services.AddTransient<IPayOSClient, PayOSAdapter>();
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
