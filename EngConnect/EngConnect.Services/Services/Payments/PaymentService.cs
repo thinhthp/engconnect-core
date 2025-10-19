@@ -160,7 +160,7 @@ namespace EngConnect.Services.Services.Payments
             payment.TransactionDate = DateTime.UtcNow;
             _context.PaymentRepository.Update(payment);
 
-            var order = await _context.OrderRepository.GetByIdAsync(payment.OrderId);
+            var order = await _context.OrderRepository.GetByIdWithItemsAndCoursesAsync(payment.OrderId);
             if (order != null)
             {
                 if (normalized == "success")
@@ -168,7 +168,7 @@ namespace EngConnect.Services.Services.Payments
                     order.Status = "paid";
                     foreach (var item in order.Orderitems)
                     {
-                        var sessions = item.Course.TotalSessions > 0 ? item.Course.TotalSessions : 0;
+                        var sessions = System.Math.Max(item.Course?.TotalSessions ?? 0, 0);
                         var enrollment = new Enrollment
                         {
                             LearnerId = order.LearnerId,

@@ -20,7 +20,17 @@ namespace EngConnect.Repositories.Repositories.Orders
         public async Task<Entities.Entities.Orders?> GetByIdAsync(int orderId)
         {
             return await _context.Orders
-                .Include(o => o.Orderitems)
+                .Include(o => o.Orderitems).ThenInclude(oi => oi.Course)
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+        }
+
+        public async Task<Entities.Entities.Orders?> GetByIdWithItemsAndCoursesAsync(int orderId)
+        {
+            // for payment webhook
+            return await _context.Orders
+                .AsSplitQuery()
+                .Include(o => o.Orderitems).ThenInclude(oi => oi.Course)
                 .Include(o => o.Payments)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
