@@ -10,4 +10,5 @@ public interface ISessionService
     Task<List<SessionDTO>> GetAllSessions(CancellationToken cancellationToken = default);
 
     Task<SessionDTO> GetSessionById(int sessionId, CancellationToken cancellationToken = default);
+    Task<SessionDTO> UpdateMeetingLink(int sessionId, UpdateMeetingLinkRequest request, CancellationToken cancellationToken = default);
 }
