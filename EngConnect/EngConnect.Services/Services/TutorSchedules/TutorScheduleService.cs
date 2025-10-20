@@ -35,7 +35,8 @@ namespace EngConnect.Services.Services.TutorSchedules
             var items = await _uow.TutorScheduleRepository.GetRangeByTutorAsync(tutorId, fromUtc, toUtc, ct);
 
             var result = items
-                .Where(s => s.IsActive && (!onlyAvailable || !s.IsBooked))
+                //.Where(s => s.IsActive && (!onlyAvailable || !s.IsBooked))
+                .Where(s => s.IsActive)
                 .OrderBy(s => s.StartTime)
                 .Select(s => new ScheduleSlotResponse(
                     s.ScheduleId,

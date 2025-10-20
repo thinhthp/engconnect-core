@@ -55,4 +55,21 @@ public class SessionController : ControllerBase
                 return NotFound(new { message = knfEx.Message });
             }
         }
+
+    [HttpPut("{sessionId:int}/meeting-link")]
+    public async Task<IActionResult> UpdateMeetingLink(int sessionId, [FromBody] UpdateMeetingLinkRequest request, CancellationToken cancellationToken)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.MeetingLink))
+            return BadRequest(new { message = "MeetingLink is required." });
+
+        try
+        {
+            var updated = await _sessionService.UpdateMeetingLink(sessionId, request, cancellationToken);
+            return Ok(updated);
+        }
+        catch (KeyNotFoundException knfEx)
+        {
+            return NotFound(new { message = knfEx.Message });
+        }
+    }
 }

@@ -182,4 +182,37 @@ public async Task<SessionDTO> CancelSession(int sessionId, CancellationToken can
         int diff = (7 + (dt.DayOfWeek - startOfWeek)) % 7;
         return dt.Date.AddDays(-1 * diff).Date;
     }
+
+    public async Task<SessionDTO> UpdateMeetingLink(int sessionId, UpdateMeetingLinkRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.MeetingLink))
+            throw new ArgumentException("MeetingLink is required.", nameof(request));
+
+        var session = await _unitOfWork.SessionRepository.GetById(sessionId, cancellationToken);
+        if (session == null)
+            throw new KeyNotFoundException($"Session with id {sessionId} not found.");
+
+        if (string.Equals(session.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Cannot update meeting link for a cancelled session.");
+
+        session.MeetingLink = request.MeetingLink.Trim();
+        session.UpdateDate = DateTime.UtcNow;
+
+        _unitOfWork.SessionRepository.UpdateSession(session, cancellationToken);
+        await _unitOfWork.SaveChangesAsync();
+
+        return new SessionDTO
+        {
+            SessionId = session.SessionId,
+            EnrollmentId = session.EnrollmentId,
+            ScheduleId = session.ScheduleId,
+            SessionNumber = session.SessionNumber,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            MeetingLink = session.MeetingLink,
+            Note = session.Note,
+            Status = session.Status,
+            IsActive = session.IsActive
+        };
+    }
 }
