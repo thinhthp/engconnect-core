@@ -1,10 +1,13 @@
-﻿using EngConnect.Entities.Entities;
+﻿using EngConnect.Entities.Common;
+using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
+using EngConnect.Repositories.Repositories.Payments.Filters;
 using EngConnect.Services.DTOs.Payments;
 using EngConnect.Services.Integrations.PayOS;
+using EngConnect.Services.Services.Payments.Filters;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -218,6 +221,55 @@ namespace EngConnect.Services.Services.Payments
             {
                 return false;
             }
+        }
+
+        public async Task<PagedResult<PaymentAdminDto>> GetForAdminAsync(PaymentSearchFilter filter, CancellationToken cancellationToken = default)
+        {
+            var page = filter.PageNumber <= 0 ? 1 : filter.PageNumber;
+            var size = filter.PageSize <= 0 ? 10 : Math.Min(filter.PageSize, 200);
+
+            var parameters = new PaymentQueryParameters
+            {
+                Search = filter.Search,
+                Status = filter.Status,
+                FromDate = filter.FromDate,
+                ToDate = filter.ToDate,
+                SortBy = string.IsNullOrWhiteSpace(filter.SortBy) ? "createdAt" : filter.SortBy,
+                SortDir = string.IsNullOrWhiteSpace(filter.SortDir) ? "desc" : filter.SortDir,
+                PageNumber = page,
+                PageSize = size
+            };
+
+            var (items, total) = await _context.PaymentRepository.GetForAdminAsync(parameters, cancellationToken);
+
+            var dtos = items.Select(p => new PaymentAdminDto
+            {
+                PaymentId = p.PaymentId,
+                OrderId = p.OrderId,
+                Amount = p.Amount,
+                TransactionCode = p.TransactionCode,
+                Status = p.Status,
+                TransactionDate = p.TransactionDate,
+                Note = p.Note,
+                CreatedAt = p.CreatedAt,
+                Order = new PaymentOrderSummaryDto
+                {
+                    OrderId = p.OrderId,
+                    LearnerId = p.Order.LearnerId,
+                    TotalAmount = p.Order.TotalAmount,
+                    PaymentMethod = p.Order.PaymentMethod,
+                    Status = p.Order.Status,
+                    CreatedAt = p.Order.CreatedAt
+                }
+            }).ToList();
+
+            return new PagedResult<PaymentAdminDto>
+            {
+                Items = dtos,
+                TotalCount = total,
+                PageNumber = page,
+                PageSize = size
+            };
         }
     }
 }
