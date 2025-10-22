@@ -1,4 +1,7 @@
-﻿using EngConnect.Services.DTOs.Payments;
+﻿using EngConnect.Entities.Common;
+using EngConnect.Entities.Entities;
+using EngConnect.Services.DTOs.Payments;
+using EngConnect.Services.Services.Payments.Filters;
 using Net.payOS.Types;
 using System;
 using System.Collections.Generic;
@@ -12,5 +15,6 @@ namespace EngConnect.Services.Services.Payments
     {
         Task<CreatePaymentLinkResponse> CreatePaymentLinkAsync(CreatePaymentLinkRequest request, CancellationToken cancellationToken = default);
         Task<bool> HandlePayOSWebhookAsync(WebhookType body, CancellationToken cancellationToken = default);
+        Task<PagedResult<PaymentAdminDto>> GetForAdminAsync(PaymentSearchFilter filter, CancellationToken cancellationToken = default);
     }
 }

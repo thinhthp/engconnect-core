@@ -507,6 +507,8 @@ namespace EngConnect.Repositories.Data
                     .HasDefaultValue(false)
                     .HasColumnName("approved");
                 entity.Property(e => e.Bio).HasColumnName("bio");
+                entity.Property(e => e.Nickname).HasColumnName("nickname");
+                entity.Property(e => e.ProfilePictureUrl).HasColumnName("profile_picture_url");
                 entity.Property(e => e.CvFile).HasColumnName("cv_file");
                 entity.Property(e => e.DemoVideo).HasColumnName("demo_video");
                 entity.Property(e => e.ExperienceYears).HasColumnName("experience_years");

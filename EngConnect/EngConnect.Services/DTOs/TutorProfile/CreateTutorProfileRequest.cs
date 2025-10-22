@@ -20,6 +20,10 @@ namespace EngConnect.Services.DTOs.TutorProfile
 
         // External URL
         public string? CvFile { get; set; }
+        [MaxLength(100)]
+        public string? Nickname { get; set; }
+
+        public string? ProfilePictureUrl { get; set; }
 
         public string? DemoVideo { get; set; }
     }
