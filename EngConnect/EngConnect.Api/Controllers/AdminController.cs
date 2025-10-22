@@ -1,4 +1,6 @@
 ﻿using EngConnect.Services.Services.Admin;
+using EngConnect.Services.Services.Payments;
+using EngConnect.Services.Services.Payments.Filters;
 using EngConnect.Services.Services.TutorProfile;
 using EngConnect.Services.Services.TutorProfile.Filters;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +13,13 @@ namespace EngConnect.Api.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly ITutorProfileService _tutorProfileService;
+        private readonly IPaymentService _paymentService;
 
-        public AdminController(IAdminService adminService, ITutorProfileService tutorProfileService)
+        public AdminController(IAdminService adminService, ITutorProfileService tutorProfileService, IPaymentService paymentService)
         {
             _adminService = adminService;
             _tutorProfileService = tutorProfileService;
+            _paymentService = paymentService;
         }
 
         // [Authorize(Roles = "Admin")]
@@ -138,6 +142,27 @@ namespace EngConnect.Api.Controllers
             };
 
             var result = await _tutorProfileService.GetForAdminAsync(filter, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("payments")]
+        public async Task<IActionResult> GetPayments(
+            [FromQuery] string? status,
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
+        {
+            var filter = new PaymentSearchFilter
+            {
+                Status = status,
+                FromDate = fromDate,
+                ToDate = toDate,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+            var result = await _paymentService.GetForAdminAsync(filter, cancellationToken);
             return Ok(result);
         }
     }

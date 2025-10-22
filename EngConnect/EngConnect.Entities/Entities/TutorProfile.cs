@@ -12,6 +12,10 @@ namespace EngConnect.Entities.Entities
 
         public int? ExperienceYears { get; set; }
 
+        public string? Nickname { get; set; }
+
+        public string? ProfilePictureUrl { get; set; }
+
         public string? Bio { get; set; }
 
         public string? Language { get; set; }

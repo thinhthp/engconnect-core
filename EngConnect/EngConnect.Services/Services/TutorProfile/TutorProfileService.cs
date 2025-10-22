@@ -46,6 +46,8 @@ namespace EngConnect.Services.Services.TutorProfile
             var profile = new Entities.Entities.TutorProfile
             {
                 TutorId = userId,
+                Nickname = request.Nickname,
+                ProfilePictureUrl = request.ProfilePictureUrl,
                 ExperienceYears = request.ExperienceYears,
                 Bio = request.Bio,
                 Language = request.Language,
@@ -70,6 +72,8 @@ namespace EngConnect.Services.Services.TutorProfile
             Bio = p.Bio,
             Language = p.Language,
             CvFile = p.CvFile,
+            Nickname = p.Nickname,
+            ProfilePictureUrl = p.ProfilePictureUrl,
             DemoVideo = p.DemoVideo,
             Approved = p.Approved,
             IsActive = p.IsActive,
