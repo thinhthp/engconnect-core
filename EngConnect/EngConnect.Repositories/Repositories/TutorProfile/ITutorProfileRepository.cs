@@ -13,5 +13,6 @@ namespace EngConnect.Repositories.Repositories.TutorProfile
         Task<bool> ExistsAsync(string tutorId, CancellationToken cancellationToken = default);
         Task AddAsync(Entities.Entities.TutorProfile profile, CancellationToken cancellationToken = default);
         Task<(List<Entities.Entities.TutorProfile> Items, int Total)> QueryAsync(TutorProfileQueryParameters parameters, CancellationToken cancellationToken = default);
+        Task UpdateAsync(EngConnect.Entities.Entities.TutorProfile profile, CancellationToken cancellationToken = default);
     }
 }

@@ -52,5 +52,23 @@ namespace EngConnect.Api.Controllers
                 return Problem(title: "Failed to create tutor profile", detail: ex.Message);
             }
         }
+
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateMine([FromBody] UpdateTutorProfileRequest request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _tutorProfileService.UpdateForCurrentUserAsync(request, cancellationToken);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (Exception ex)
+            {
+                return Problem(title: "Failed to update tutor profile", detail: ex.Message);
+            }
+        }
     }
 }
