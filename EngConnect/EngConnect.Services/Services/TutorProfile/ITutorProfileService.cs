@@ -14,5 +14,6 @@ namespace EngConnect.Services.Services.TutorProfile
         Task<TutorProfileDTO?> GetCurrentAsync(CancellationToken cancellationToken = default);
         Task<TutorProfileDTO> CreateForCurrentUserAsync(CreateTutorProfileRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<TutorProfileDTO>> GetForAdminAsync(TutorProfileSearchFilter filter, CancellationToken cancellationToken = default);
+        Task<TutorProfileDTO> UpdateForCurrentUserAsync(UpdateTutorProfileRequest request, CancellationToken cancellationToken = default);
     }
 }

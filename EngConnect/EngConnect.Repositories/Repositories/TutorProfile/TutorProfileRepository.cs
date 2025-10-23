@@ -36,6 +36,12 @@ namespace EngConnect.Repositories.Repositories.TutorProfile
             await _context.TutorProfiles.AddAsync(profile, cancellationToken);
         }
 
+        public Task UpdateAsync(EngConnect.Entities.Entities.TutorProfile profile, CancellationToken cancellationToken = default)
+        {
+            _context.TutorProfiles.Update(profile);
+            return Task.CompletedTask;
+        }
+
         public async Task<(List<Entities.Entities.TutorProfile> Items, int Total)> QueryAsync(
             TutorProfileQueryParameters parameters,
             CancellationToken cancellationToken = default)
