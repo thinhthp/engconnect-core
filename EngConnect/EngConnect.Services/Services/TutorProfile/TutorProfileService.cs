@@ -108,5 +108,32 @@ namespace EngConnect.Services.Services.TutorProfile
                 PageSize = repoParams.PageSize
             };
         }
+
+        public async Task<TutorProfileDTO> UpdateForCurrentUserAsync(UpdateTutorProfileRequest request, CancellationToken cancellationToken = default)
+        {
+            string? userId = _userContext.GetCurrentUserId();
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new UnauthorizedAccessException("User is not authenticated.");
+
+            var profile = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
+            if (profile == null)
+                throw new KeyNotFoundException("Tutor profile not found.");
+
+            // only overwrite provided fields
+            if (request.Nickname is not null) profile.Nickname = request.Nickname;
+            if (request.ProfilePictureUrl is not null) profile.ProfilePictureUrl = request.ProfilePictureUrl;
+            if (request.ExperienceYears.HasValue) profile.ExperienceYears = request.ExperienceYears;
+            if (request.Bio is not null) profile.Bio = request.Bio;
+            if (request.Language is not null) profile.Language = request.Language;
+            if (request.CvFile is not null) profile.CvFile = request.CvFile;
+            if (request.DemoVideo is not null) profile.DemoVideo = request.DemoVideo;
+
+            profile.UpdateDate = DateTime.UtcNow;
+
+            await _unitOfWork.TutorProfileRepository.UpdateAsync(profile, cancellationToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Map(profile);
+        }
     }
 }
