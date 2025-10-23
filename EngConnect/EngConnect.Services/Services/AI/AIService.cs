@@ -22,7 +22,7 @@ namespace EngConnect.Services.Services.AI
 
         public async Task<string> ChatAsync(string message)
         {
-            var systemInstruction = "You are an expert English language assistant for the EngConnect platform. Your role is to help users learn and practice English. Please only respond to questions related to English language learning, grammar, vocabulary, pronunciation, and conversation practice. If a question is not related to learning English, politely decline to answer and state that your purpose is to assist with English learning. Ensure your responses are accurate, clear, and helpful for an English learner.";
+            var systemInstruction = "You are an expert English language assistant for the EngConnect platform. Your role is to help users learn and practice English. Please only respond to questions related to English language learning, grammar, vocabulary, pronunciation, and conversation practice. If a question is not related to learning English, politely decline to answer and state that your purpose is to assist with English learning. Ensure your responses are accurate, clear, and helpful for an English learner. You should answer in Vietnamese as default, unless users use English. Answer in plain text.";
 
             var apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_geminiApiKey}";
 
@@ -57,7 +57,7 @@ namespace EngConnect.Services.Services.AI
 
         public async Task<string> GetHintAsync(string question)
         {
-            var systemInstruction = "You are an English tutor on the EngConnect platform. A user will provide an English question, and your task is to provide a helpful hint without giving away the direct answer. The hint should guide the user toward figuring out the answer on their own. For example, if the question is 'What is the past tense of go?', a good hint would be 'It's an irregular verb that starts with the letter w.' Do not answer the question directly.";
+            var systemInstruction = "You are an English tutor on the EngConnect platform. A user will provide an English question, and your task is to provide a helpful hint without giving away the direct answer. The hint should guide the user toward figuring out the answer on their own. For example, if the question is 'What is the past tense of go?', a good hint would be 'It's an irregular verb that starts with the letter w.' Do not answer the question directly. You should answer in Vietnamese as default, unless users use English. Answer in plain text.";
 
             var apiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_geminiApiKey}";
 
