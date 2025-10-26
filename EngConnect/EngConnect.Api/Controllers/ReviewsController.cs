@@ -31,10 +31,10 @@ namespace EngConnect.Api.Controllers
 
         
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateReviewRequest request, CancellationToken cancellationToken)
+        [HttpPut]
+        public async Task<IActionResult> Update( [FromBody] UpdateReviewRequest request, CancellationToken cancellationToken)
         {
-            if (id != request.ReviewId) request.ReviewId = id;
+            
             var dto = await _service.UpdateAsync(request, cancellationToken);
             return Ok(dto);
         }

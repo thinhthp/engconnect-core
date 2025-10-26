@@ -22,6 +22,10 @@ namespace EngConnect.Services.Services.Reviews;
     {
         var currentUser = await _userContext.GetCurrentUserAsync(cancellationToken) ?? throw new UnauthorizedAccessException("User is not authenticated");
 
+        // Validate session exists
+        var session = await _uow.SessionRepository.GetById(request.SessionId, cancellationToken);
+        if (session == null) throw new KeyNotFoundException("Session not found");
+
         var entity = new Review()
         {
             SessionId = request.SessionId,
