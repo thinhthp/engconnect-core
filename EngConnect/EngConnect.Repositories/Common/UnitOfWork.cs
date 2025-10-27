@@ -17,6 +17,7 @@ using EngConnect.Repositories.Repositories.Sessions;
 using EngConnect.Repositories.Repositories.Submissions;
 using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
+using EngConnect.Repositories.Repositories.Reviews;
 
 namespace EngConnect.Repositories.Common
 {
@@ -38,6 +39,7 @@ namespace EngConnect.Repositories.Common
         public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; private set; }
         public ITutorScheduleRepository TutorScheduleRepository { get; private set; }
         public IPaymentRepository PaymentRepository { get; private set; }
+    public IReviewRepository ReviewRepository { get; private set; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -57,6 +59,7 @@ namespace EngConnect.Repositories.Common
             TutorScheduleRepository = new TutorScheduleRepository(_context);
             OrderRepository = new OrderRepository(_context);
             PaymentRepository = new PaymentRepository(_context);
+            ReviewRepository = new ReviewRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()

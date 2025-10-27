@@ -9,19 +9,24 @@ using System.Threading.Tasks;
 
 namespace EngConnect.Services.Services.Admin
 {
+    using Microsoft.AspNetCore.Identity;
+    using EngConnect.Entities.Entities;
+
     public class AdminService : IAdminService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _userContext;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         private const string StatusApproved = "approved";
         private const string StatusRejected = "rejected";
         private const string TutorRejectedNote = "Rejected by admin, please check your mail for detail.";
 
-        public AdminService(IUnitOfWork unitOfWork, IUserContextService userContext)
+        public AdminService(IUnitOfWork unitOfWork, IUserContextService userContext, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _userContext = userContext;
+            _userManager = userManager;
         }
 
         public async Task<bool> ApproveCourseAsync(int courseId, CancellationToken cancellationToken = default)
@@ -36,9 +41,9 @@ namespace EngConnect.Services.Services.Admin
 
             course.Status = StatusApproved;
 
-            var adminId = _userContext.GetCurrentUserId();
-            if (!string.IsNullOrWhiteSpace(adminId))
-                course.UpdateBy = adminId;
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                course.UpdateBy = adminUser.UserName;
 
             var affected = await _unitOfWork.SaveChangesAsync();
             return affected > 0;
@@ -57,9 +62,9 @@ namespace EngConnect.Services.Services.Admin
             course.Status = StatusRejected;
             course.Note = TutorRejectedNote;
 
-            var adminId = _userContext.GetCurrentUserId();
-            if (!string.IsNullOrWhiteSpace(adminId))
-                course.UpdateBy = adminId;
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                course.UpdateBy = adminUser.UserName;
 
             var affected = await _unitOfWork.SaveChangesAsync();
             return affected > 0;
@@ -80,9 +85,9 @@ namespace EngConnect.Services.Services.Admin
 
             tutor.Approved = true;
 
-            var adminId = _userContext.GetCurrentUserId();
-            if (!string.IsNullOrWhiteSpace(adminId))
-                tutor.UpdateBy = adminId;
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                tutor.UpdateBy = adminUser.UserName;
 
             var affected = await _unitOfWork.SaveChangesAsync();
             return affected > 0;
@@ -114,12 +119,64 @@ namespace EngConnect.Services.Services.Admin
             if (!changed)
                 return true;
 
-            var adminId = _userContext.GetCurrentUserId();
-            if (!string.IsNullOrWhiteSpace(adminId))
-                tutor.UpdateBy = adminId;
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                tutor.UpdateBy = adminUser.UserName;
 
             var affected = await _unitOfWork.SaveChangesAsync();
             return affected > 0;
+        }
+
+        public async Task<bool> BanUserAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            if (!user.IsActive)
+                return true; 
+
+            user.IsActive = false;
+            user.UpdateDate = DateTime.UtcNow;
+
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                user.UpdateBy = adminUser.UserName;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            return true;
+        }
+
+        public async Task<bool> UnbanUserAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+
+            if (user.IsActive)
+                return true; 
+
+            user.IsActive = true;
+            user.UpdateDate = DateTime.UtcNow;
+
+            var adminUser = await _userContext.GetCurrentUserAsync(cancellationToken);
+            if (adminUser != null && !string.IsNullOrWhiteSpace(adminUser.UserName))
+                user.UpdateBy = adminUser.UserName;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            return true;
         }
     }
 }

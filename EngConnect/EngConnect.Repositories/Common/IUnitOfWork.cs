@@ -16,6 +16,7 @@ using EngConnect.Repositories.Repositories.TutorSchedules;
 using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
+using EngConnect.Repositories.Repositories.Reviews;
 
 namespace EngConnect.Repositories.Common
 {
@@ -34,6 +35,7 @@ namespace EngConnect.Repositories.Common
         ISubmissionRepository SubmissionRepository { get; }
         IAssignmentRepository AssignmentRepository { get; }
         ISessionRepository SessionRepository { get; }
+        IReviewRepository ReviewRepository { get; }
         ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; }
         ITutorScheduleRepository TutorScheduleRepository { get; }
         IOrderRepository OrderRepository { get; }
