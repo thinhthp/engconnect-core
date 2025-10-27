@@ -47,5 +47,6 @@ namespace EngConnect.Entities.Entities
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
         public virtual TutorProfile Tutor { get; set; } = null!;
+        public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
     }
 }

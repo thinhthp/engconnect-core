@@ -36,6 +36,7 @@ namespace EngConnect.Repositories.Common
         IAssignmentRepository AssignmentRepository { get; }
         ISessionRepository SessionRepository { get; }
         IReviewRepository ReviewRepository { get; }
+        ICourseReviewRepository CourseReviewRepository { get; }
         ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; }
         ITutorScheduleRepository TutorScheduleRepository { get; }
         IOrderRepository OrderRepository { get; }

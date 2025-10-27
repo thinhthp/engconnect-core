@@ -391,6 +391,45 @@ namespace EngConnect.Repositories.Data
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("review_session_id_fkey");
             });
+            modelBuilder.Entity<CourseReview>(entity =>
+            {
+                entity.HasKey(e => e.CourseReviewId).HasName("course_review_pkey");
+
+                entity.ToTable("course_review");
+
+                entity.Property(e => e.CourseReviewId).HasColumnName("course_review_id");
+                entity.Property(e => e.Comment).HasColumnName("comment");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+                entity.Property(e => e.LearnerId).HasColumnName("learner_id");
+                entity.Property(e => e.Rating).HasColumnName("rating");
+                entity.Property(e => e.CourseId).HasColumnName("course_id");
+
+                entity.HasOne(d => d.Learner).WithMany(p => p.CourseReviews)
+                    .HasForeignKey(d => d.LearnerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("course_review_learner_id_fkey");
+
+                entity.HasOne(d => d.Course).WithMany(p => p.CourseReviews)
+                    .HasForeignKey(d => d.CourseId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("course_review_course_id_fkey");
+            });
 
             modelBuilder.Entity<Session>(entity =>
             {
@@ -685,6 +724,8 @@ namespace EngConnect.Repositories.Data
         public virtual DbSet<Payment> Payments { get; set; }
 
         public virtual DbSet<Review> Reviews { get; set; }
+
+        public virtual DbSet<CourseReview> CourseReviews { get; set; }
 
         public virtual DbSet<Session> Sessions { get; set; }
 
