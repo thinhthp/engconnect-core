@@ -26,5 +26,6 @@ namespace EngConnect.Entities.Entities
         public virtual ICollection<Submission> Submissions { get; set; } = new List<Submission>();
 
         public virtual TutorProfile? TutorProfile { get; set; }
+        public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
     }
 }
