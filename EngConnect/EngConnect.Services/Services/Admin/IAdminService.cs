@@ -12,5 +12,7 @@ namespace EngConnect.Services.Services.Admin
         Task<bool> RejectTutorAsync(string tutorId, CancellationToken cancellationToken = default);
         Task<bool> ApproveCourseAsync(int courseId, CancellationToken cancellationToken = default);
         Task<bool> RejectCourseAsync(int courseId, CancellationToken cancellationToken = default);
+        Task<bool> BanUserAsync(string userId, CancellationToken cancellationToken = default);
+        Task<bool> UnbanUserAsync(string userId, CancellationToken cancellationToken = default);
     }
 }

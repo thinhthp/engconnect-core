@@ -115,6 +115,52 @@ namespace EngConnect.Api.Controllers
         }
 
         // [Authorize(Roles = "Admin")]
+        [HttpPut("users/{userId}/ban")]
+        public async Task<IActionResult> BanUser(string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _adminService.BanUserAsync(userId, cancellationToken);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message, field = ex.ParamName });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+        }
+
+        // [Authorize(Roles = "Admin")]
+        [HttpPut("users/{userId}/unban")]
+        public async Task<IActionResult> UnbanUser(string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _adminService.UnbanUserAsync(userId, cancellationToken);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message, field = ex.ParamName });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+        }
+
+        // [Authorize(Roles = "Admin")]
         [HttpGet("tutors")]
         public async Task<IActionResult> GetTutorProfiles(
             [FromQuery] string? search,
