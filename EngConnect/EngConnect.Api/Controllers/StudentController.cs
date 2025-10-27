@@ -15,10 +15,13 @@ namespace EngConnect.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetStudents(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetStudents(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken cancellationToken = default)
         {
-            var list = await _studentService.GetStudentsAsync(cancellationToken);
-            return Ok(list);
+            var result = await _studentService.GetStudentsAsync(pageNumber, pageSize, cancellationToken);
+            return Ok(result);
         }
     }
 }
