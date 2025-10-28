@@ -68,6 +68,7 @@ public class CourseReviewService : ICourseReviewService
 
         return new PagedResult<CourseReviewDTO>
         {
+            Items = dtoItems,
             TotalCount = total,
             PageNumber = pageNumber,
             PageSize = pageSize
