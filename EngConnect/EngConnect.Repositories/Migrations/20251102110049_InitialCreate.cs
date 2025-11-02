@@ -152,6 +152,8 @@ namespace EngConnect.Repositories.Migrations
                 {
                     tutor_id = table.Column<string>(type: "text", nullable: false),
                     experience_years = table.Column<int>(type: "integer", nullable: true),
+                    nickname = table.Column<string>(type: "text", nullable: true),
+                    profile_picture_url = table.Column<string>(type: "text", nullable: true),
                     bio = table.Column<string>(type: "text", nullable: true),
                     language = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     cv_file = table.Column<string>(type: "text", nullable: true),
@@ -253,7 +255,7 @@ namespace EngConnect.Repositories.Migrations
                 {
                     course_id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    tutor_id = table.Column<string>(type: "text", nullable: false),
+                    tutor_id = table.Column<string>(type: "text", nullable: true),
                     title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
                     level = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
@@ -358,6 +360,38 @@ namespace EngConnect.Repositories.Migrations
                         column: x => x.course_id,
                         principalTable: "course",
                         principalColumn: "course_id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "course_review",
+                columns: table => new
+                {
+                    course_review_id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    course_id = table.Column<int>(type: "integer", nullable: false),
+                    learner_id = table.Column<string>(type: "text", nullable: false),
+                    rating = table.Column<int>(type: "integer", nullable: false),
+                    comment = table.Column<string>(type: "text", nullable: true),
+                    note = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    update_date = table.Column<DateTime>(type: "timestamptz", nullable: true),
+                    create_by = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    update_by = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("course_review_pkey", x => x.course_review_id);
+                    table.ForeignKey(
+                        name: "course_review_course_id_fkey",
+                        column: x => x.course_id,
+                        principalTable: "course",
+                        principalColumn: "course_id");
+                    table.ForeignKey(
+                        name: "course_review_learner_id_fkey",
+                        column: x => x.learner_id,
+                        principalTable: "application_user",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -676,6 +710,16 @@ namespace EngConnect.Repositories.Migrations
                 column: "course_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_course_review_course_id",
+                table: "course_review",
+                column: "course_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_course_review_learner_id",
+                table: "course_review",
+                column: "learner_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_enrollment_course_id",
                 table: "enrollment",
                 column: "course_id");
@@ -778,6 +822,9 @@ namespace EngConnect.Repositories.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "course_review");
 
             migrationBuilder.DropTable(
                 name: "lesson");
