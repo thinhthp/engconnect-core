@@ -705,6 +705,103 @@ namespace EngConnect.Repositories.Data
                     .HasMaxLength(255)
                     .HasColumnName("note");
             });
+
+            modelBuilder.Entity<ChatThread>(entity =>
+            {
+                entity.HasKey(e => e.ThreadId).HasName("chatthread_pkey");
+                entity.ToTable("chat_thread");
+
+                entity.Property(e => e.ThreadId).HasColumnName("thread_id");
+                entity.Property(e => e.Title).HasMaxLength(255).HasColumnName("title");
+                entity.Property(e => e.IsGroup).HasColumnName("is_group");
+
+                entity.Property(e => e.Note).HasMaxLength(255).HasColumnName("note");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+            });
+
+            modelBuilder.Entity<ChatParticipant>(entity =>
+            {
+                entity.HasKey(e => e.ParticipantId).HasName("chatparticipant_pkey");
+                entity.ToTable("chat_participant");
+
+                entity.Property(e => e.ParticipantId).HasColumnName("participant_id");
+                entity.Property(e => e.ThreadId).HasColumnName("thread_id");
+                entity.Property(e => e.UserId).HasMaxLength(450).HasColumnName("user_id");
+                entity.Property(e => e.JoinedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("joined_at");
+                entity.Property(e => e.LastReadAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("last_read_at");
+                entity.Property(e => e.IsMuted).HasColumnName("is_muted");
+
+                entity.HasIndex(e => new { e.ThreadId, e.UserId }).IsUnique().HasDatabaseName("ux_chat_participant_thread_user");
+
+                entity.HasOne(d => d.Thread).WithMany(p => p.Participants)
+                    .HasForeignKey(d => d.ThreadId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("chatparticipant_thread_id_fkey");
+
+                entity.HasOne(d => d.User).WithMany(p => p.ChatParticipants)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("chatparticipant_user_id_fkey");
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.HasKey(e => e.MessageId).HasName("chatmessage_pkey");
+                entity.ToTable("chat_message");
+
+                entity.Property(e => e.MessageId).HasColumnName("message_id");
+                entity.Property(e => e.ThreadId).HasColumnName("thread_id");
+                entity.Property(e => e.SenderId).HasMaxLength(450).HasColumnName("sender_id");
+                entity.Property(e => e.Content).HasColumnName("content");
+                entity.Property(e => e.ContentType).HasMaxLength(40).HasColumnName("content_type");
+                entity.Property(e => e.IsEdited).HasColumnName("is_edited");
+
+                entity.Property(e => e.Note).HasMaxLength(255).HasColumnName("note");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+
+                entity.HasIndex(e => new { e.ThreadId, e.CreatedAt }).HasDatabaseName("ix_chat_message_thread_created");
+
+                entity.HasOne(d => d.Thread).WithMany(p => p.Messages)
+                    .HasForeignKey(d => d.ThreadId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("chatmessage_thread_id_fkey");
+
+                entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages)
+                    .HasForeignKey(d => d.SenderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("chatmessage_sender_id_fkey");
+            });
         }
 
         public virtual DbSet<Assignment> Assignments { get; set; }
@@ -738,5 +835,11 @@ namespace EngConnect.Repositories.Data
         public virtual DbSet<TutorWeeklyAvailability> TutorWeeklyAvailabilities { get; set; }
 
         public virtual DbSet<WithdrawRequest> WithdrawRequests { get; set; }
+
+        public virtual DbSet<ChatThread> ChatThreads { get; set; }
+
+        public virtual DbSet<ChatParticipant> ChatParticipants { get; set; }
+
+        public virtual DbSet<ChatMessage> ChatMessages { get; set; }
     }
 }

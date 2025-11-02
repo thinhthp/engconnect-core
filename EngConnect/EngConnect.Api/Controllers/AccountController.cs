@@ -156,10 +156,10 @@ namespace EngConnect.Api.Controllers
                 return Unauthorized();
 
             //Check email confirmed
-            if (!user.EmailConfirmed)
-            {
-                return BadRequest(new { message = "Email not confirmed. Please check your inbox." });
-            }
+            //if (!user.EmailConfirmed)
+            //{
+            //    return BadRequest(new { message = "Email not confirmed. Please check your inbox." });
+            //}
             if(user.IsActive == false)
             {
                 return BadRequest(new { message = "Your account has been deactivated. Please contact support for assistance." });
