@@ -14,7 +14,7 @@ namespace EngConnect.Api.Extensions
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 options.User.RequireUniqueEmail = true;
-                options.SignIn.RequireConfirmedEmail = true;
+                //options.SignIn.RequireConfirmedEmail = true;
             })
             .AddEntityFrameworkStores<EngConnectContext>()
             .AddDefaultTokenProviders();

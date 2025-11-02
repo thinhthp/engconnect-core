@@ -9,4 +9,7 @@ public interface IAssignmentService
     Task<AssignmentDTO> UpdateAssignment(UpdateAssignmentRequest request, CancellationToken cancellationToken = default);
 
     Task<AssignmentDTO> GetAssignmentById(int id, CancellationToken cancellationToken = default);
+
+  
+    Task DeleteAssignment(int id, CancellationToken cancellationToken = default);
 }

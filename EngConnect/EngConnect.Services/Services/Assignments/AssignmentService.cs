@@ -6,27 +6,22 @@ using EngConnect.Services.Services.UserContext;
 
 namespace EngConnect.Services.Services.Assignments;
 
-public class AssignmentService
+public class AssignmentService : IAssignmentService
 {
-     private readonly IAssignmentRepository _assignmentRepository;
+ 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContextService _user;
 
-    public AssignmentService(IAssignmentRepository assignmentRepository, IUnitOfWork unitOfWork,IUserContextService user)
+    public AssignmentService( IUnitOfWork unitOfWork,IUserContextService user)
     {
-        _assignmentRepository = assignmentRepository;
+ 
         _unitOfWork = unitOfWork;
         _user = user;
     }
 
     public async Task<AssignmentDTO> CreateAssignment(CreateAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        var currentuser =  _user.GetCurrentUserId();
-        if (request.SessionId <= 0)
-            throw new ArgumentException("SessionId phải lớn hơn 0.");
-
-        if (request.CourseId <= 0)
-            throw new ArgumentException("CourseId phải lớn hơn 0.");
+        var currentuser = _user.GetCurrentUserId();
 
         if (string.IsNullOrWhiteSpace(request.Title))
             throw new ArgumentException("Title must not be null.");
@@ -59,7 +54,7 @@ public class AssignmentService
             CreateBy = currentuser
         };
 
-        await _assignmentRepository.CreateAssignment(entity, cancellationToken);
+        await _unitOfWork.AssignmentRepository.CreateAssignment(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync();
 
         return new AssignmentDTO
@@ -77,22 +72,27 @@ public class AssignmentService
 
     public async Task<AssignmentDTO> UpdateAssignment(UpdateAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        var currentuser =  _user.GetCurrentUserId();
-        var entity = await _assignmentRepository.GetAssignmentById(request.AssignmentId, cancellationToken);
+        var currentuser = _user.GetCurrentUserId();
+        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(request.AssignmentId, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException($"Assignment with id {request.AssignmentId} not found.");
         }
-
+        if (string.IsNullOrWhiteSpace(request.Title))
+            throw new ArgumentException("Title must not be null.");
+        if (string.IsNullOrWhiteSpace(request.Description))
+            throw new ArgumentException("Description must not be null.");
+        if (string.IsNullOrWhiteSpace(request.Note))
+            throw new ArgumentException("Note must not be null.");
         entity.Title = request.Title;
         entity.Description = request.Description;
         entity.DueDate = request.DueDate;
         entity.Note = request.Note;
         entity.UpdateDate = DateTime.UtcNow;
         entity.UpdateBy = currentuser;
-        
 
-        _assignmentRepository.UpdateAssignment(entity,cancellationToken);
+
+         _unitOfWork.AssignmentRepository.UpdateAssignment(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync();
 
         return new AssignmentDTO
@@ -110,7 +110,7 @@ public class AssignmentService
 
     public async Task<AssignmentDTO> GetAssignmentById(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _assignmentRepository.GetAssignmentById(id, cancellationToken);
+        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(id, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException($"Assignment with id {id} not found.");
@@ -127,5 +127,20 @@ public class AssignmentService
             Note = entity.Note
             
         };
+    }
+
+    public async Task DeleteAssignment(int id, CancellationToken cancellationToken = default)
+    {
+        var currentuser = _user.GetCurrentUserId();
+        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(id, cancellationToken);
+        if (entity == null)
+            throw new KeyNotFoundException($"Assignment with id {id} not found.");
+
+        entity.IsActive = false;
+        entity.UpdateDate = DateTime.UtcNow;
+        entity.UpdateBy = currentuser;
+
+        _unitOfWork.AssignmentRepository.UpdateAssignment(entity, cancellationToken);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EngConnect.Repositories.Migrations
 {
     [DbContext(typeof(EngConnectContext))]
-    [Migration("20251013152840_InitialCreate")]
+    [Migration("20251102110049_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -259,7 +259,6 @@ namespace EngConnect.Repositories.Migrations
                         .HasColumnName("total_sessions");
 
                     b.Property<string>("TutorId")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("tutor_id");
 
@@ -342,6 +341,71 @@ namespace EngConnect.Repositories.Migrations
                     b.HasIndex("CourseId");
 
                     b.ToTable("course_module", (string)null);
+                });
+
+            modelBuilder.Entity("EngConnect.Entities.Entities.CourseReview", b =>
+                {
+                    b.Property<int>("CourseReviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("course_review_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CourseReviewId"));
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text")
+                        .HasColumnName("comment");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("course_id");
+
+                    b.Property<string>("CreateBy")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("create_by");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LearnerId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("learner_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("note");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer")
+                        .HasColumnName("rating");
+
+                    b.Property<string>("UpdateBy")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("update_by");
+
+                    b.Property<DateTime?>("UpdateDate")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("update_date");
+
+                    b.HasKey("CourseReviewId")
+                        .HasName("course_review_pkey");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("LearnerId");
+
+                    b.ToTable("course_review", (string)null);
                 });
 
             modelBuilder.Entity("EngConnect.Entities.Entities.Enrollment", b =>
@@ -940,8 +1004,16 @@ namespace EngConnect.Repositories.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("language");
 
+                    b.Property<string>("Nickname")
+                        .HasColumnType("text")
+                        .HasColumnName("nickname");
+
                     b.Property<string>("Note")
                         .HasColumnType("text");
+
+                    b.Property<string>("ProfilePictureUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("profile_picture_url");
 
                     b.Property<string>("UpdateBy")
                         .HasColumnType("text");
@@ -1314,7 +1386,6 @@ namespace EngConnect.Repositories.Migrations
                     b.HasOne("EngConnect.Entities.Entities.TutorProfile", "Tutor")
                         .WithMany("Courses")
                         .HasForeignKey("TutorId")
-                        .IsRequired()
                         .HasConstraintName("course_tutor_id_fkey");
 
                     b.Navigation("Tutor");
@@ -1329,6 +1400,25 @@ namespace EngConnect.Repositories.Migrations
                         .HasConstraintName("coursemodule_course_id_fkey");
 
                     b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("EngConnect.Entities.Entities.CourseReview", b =>
+                {
+                    b.HasOne("EngConnect.Entities.Entities.Course", "Course")
+                        .WithMany("CourseReviews")
+                        .HasForeignKey("CourseId")
+                        .IsRequired()
+                        .HasConstraintName("course_review_course_id_fkey");
+
+                    b.HasOne("EngConnect.Entities.Entities.ApplicationUser", "Learner")
+                        .WithMany("CourseReviews")
+                        .HasForeignKey("LearnerId")
+                        .IsRequired()
+                        .HasConstraintName("course_review_learner_id_fkey");
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Learner");
                 });
 
             modelBuilder.Entity("EngConnect.Entities.Entities.Enrollment", b =>
@@ -1563,6 +1653,8 @@ namespace EngConnect.Repositories.Migrations
 
             modelBuilder.Entity("EngConnect.Entities.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("CourseReviews");
+
                     b.Navigation("Enrollments");
 
                     b.Navigation("Orders");
@@ -1584,6 +1676,8 @@ namespace EngConnect.Repositories.Migrations
                     b.Navigation("Assignments");
 
                     b.Navigation("CourseModules");
+
+                    b.Navigation("CourseReviews");
 
                     b.Navigation("Enrollments");
 
