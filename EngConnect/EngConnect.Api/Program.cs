@@ -1,4 +1,5 @@
 using EngConnect.Api.Extensions;
+using EngConnect.Api.Hubs;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using EngConnect.Services.Integrations.PayOS;
@@ -41,6 +42,7 @@ builder.Services.Scan(scan =>
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 builder.Services.AddHostedService<WeeklyScheduleGenerationHostedService>();
+builder.Services.AddSignalR();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -116,5 +118,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

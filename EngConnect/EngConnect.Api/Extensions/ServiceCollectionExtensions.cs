@@ -14,7 +14,7 @@ namespace EngConnect.Api.Extensions
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 options.User.RequireUniqueEmail = true;
-                //options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedEmail = true;
             })
             .AddEntityFrameworkStores<EngConnectContext>()
             .AddDefaultTokenProviders();
@@ -43,6 +43,19 @@ namespace EngConnect.Api.Extensions
                     ValidateIssuer = false,
                     ValidateAudience = false,
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role
+                };
+
+                //Configure SignalR authentication
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
+                    {
+                        var accessToken = ctx.Request.Query["access_token"];
+                        var path = ctx.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            ctx.Token = accessToken;
+                        return Task.CompletedTask;
+                    }
                 };
             })
             .AddCookie()

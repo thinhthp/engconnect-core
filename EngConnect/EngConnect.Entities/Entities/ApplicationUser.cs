@@ -27,5 +27,9 @@ namespace EngConnect.Entities.Entities
 
         public virtual TutorProfile? TutorProfile { get; set; }
         public virtual ICollection<CourseReview> CourseReviews { get; set; } = new List<CourseReview>();
+
+        // Chat
+        public virtual ICollection<ChatParticipant> ChatParticipants { get; set; } = new List<ChatParticipant>();
+        public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
     }
 }
