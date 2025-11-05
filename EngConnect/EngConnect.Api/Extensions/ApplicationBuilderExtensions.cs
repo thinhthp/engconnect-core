@@ -1,9 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using EngConnect.Repositories.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace EngConnect.Api.Extensions
 {
     public static class ApplicationBuilderExtensions
     {
+        public static async Task ApplyMigrationsAsync(this IApplicationBuilder app)
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<EngConnectContext>();
+            await ctx.Database.MigrateAsync();
+        }
+
         public static async Task SeedRolesAsync(this IApplicationBuilder app)
         {
             // Create a scope to retrieve scoped services
