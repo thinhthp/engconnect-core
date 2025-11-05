@@ -42,7 +42,10 @@ builder.Services.Scan(scan =>
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 builder.Services.AddHostedService<WeeklyScheduleGenerationHostedService>();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(o =>
+{
+    o.EnableDetailedErrors = true;
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -97,6 +100,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Migrate database
+//await app.ApplyMigrationsAsync();
 
 // Apply Cors
 app.UseCors("AllowAll");
