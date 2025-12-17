@@ -227,9 +227,9 @@ namespace EngConnect.Api.Controllers
         [HttpGet("google-signin")]
         public IActionResult GoogleSignIn()
         {
-            string? redirectUrl = Url.Action("GoogleResponse", "Auth");
+            string? redirectUrl = Url.Action(nameof(GoogleResponse), "Account");
             AuthenticationProperties properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
-            return new ChallengeResult("Google", properties);
+            return Challenge(properties, "Google");
         }
 
         //Callback endpoint that processes the external login info from Google.
@@ -239,39 +239,45 @@ namespace EngConnect.Api.Controllers
             //Retrieve external login info from the temporary external cookie.
             ExternalLoginInfo? info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
-            {
                 return BadRequest("Error loading external login information.");
-            }
 
             //Retrieve the user's email from the external login claims.
             string? email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(email))
-            {
                 return BadRequest("Email claim not received from Google.");
-            }
 
-            //Check if the user already exists; if not, create a new user.
-            ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-            if (user == null)
+            // Try existing external login
+            Microsoft.AspNetCore.Identity.SignInResult? signInResult = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,
+                info.ProviderKey,
+                isPersistent: false);
+
+            ApplicationUser? user;
+
+            if (signInResult.Succeeded)
             {
-                user = new ApplicationUser
-                {
-                    UserName = email,
-                    Email = email,
-                    EmailConfirmed = true //No need to confirm email from Google
-                };
-                IdentityResult createResult = await _userManager.CreateAsync(user);
-
-                //Add role
-                await _userManager.AddToRoleAsync(user, "Student");
-                if (!createResult.Succeeded)
-                {
-                    return BadRequest("Error creating user.");
-                }
+                user = await _userManager.FindByEmailAsync(email);
             }
+            else
+            {
+                user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = email,
+                        Email = email,
+                        EmailConfirmed = true
+                    };
+                    IdentityResult createResult = await _userManager.CreateAsync(user);
+                    if (!createResult.Succeeded)
+                        return BadRequest("Error creating user.");
+                    await _userManager.AddToRoleAsync(user, "Student");
+                }
 
-            //Link the user to the external login provider.
-            IdentityResult loginResult = await _userManager.AddLoginAsync(user, info);
+                // Link external login
+                IdentityResult addLoginResult = await _userManager.AddLoginAsync(user, info);
+            }
 
             //Generate a JWT token for the authenticated user.
             string tokenString = await GenerateToken(user);
@@ -298,7 +304,7 @@ namespace EngConnect.Api.Controllers
                     window.opener.postMessage({{
                         token: '{tokenString}',
                         response: {System.Text.Json.JsonSerializer.Serialize(response)}
-                    }}, 'https://swd-392-se-1709-group1-fe.vercel.app/');
+                    }}, 'http://localhost:5173/');
                     </script>
                 </body>
                 </html>";
