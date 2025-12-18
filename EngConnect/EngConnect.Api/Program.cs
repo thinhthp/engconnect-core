@@ -111,7 +111,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 var app = builder.Build();
 
 // Migrate database
-//await app.ApplyMigrationsAsync();
+await app.ApplyMigrationsAsync();
 
 // Apply Cors
 app.UseCors("AllowAll");
