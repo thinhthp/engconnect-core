@@ -1,6 +1,7 @@
 ﻿using EngConnect.Entities.Common;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Repositories.TutorProfile.Filters;
+using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.DTOs.TutorProfile;
 using EngConnect.Services.Services.TutorProfile.Filters;
 using EngConnect.Services.Services.UserContext;
@@ -16,11 +17,13 @@ namespace EngConnect.Services.Services.TutorProfile
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _userContext;
+        private readonly ITutorProfileCache _tutorProfileCache;
 
-        public TutorProfileService(IUnitOfWork unitOfWork, IUserContextService userContext)
+        public TutorProfileService(IUnitOfWork unitOfWork, IUserContextService userContext, ITutorProfileCache tutorProfileCache)
         {
             _unitOfWork = unitOfWork;
             _userContext = userContext;
+            _tutorProfileCache = tutorProfileCache;
         }
 
         public async Task<TutorProfileDTO?> GetCurrentAsync(CancellationToken cancellationToken = default)
@@ -29,8 +32,24 @@ namespace EngConnect.Services.Services.TutorProfile
             if (string.IsNullOrWhiteSpace(userId))
                 return null;
 
+            // try cache
+            var cached = await _tutorProfileCache.GetAsync(userId, cancellationToken);
+            if (cached is not null)
+            {
+                return cached;
+            }
+
+            // fallback to DB
             var profile = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
-            return profile == null ? null : Map(profile);
+            if (profile == null)
+                return null;
+
+            var dto = Map(profile);
+
+            // populate cache
+            await _tutorProfileCache.SetAsync(dto, cancellationToken);
+
+            return dto;
         }
 
         public async Task<TutorProfileDTO> CreateForCurrentUserAsync(CreateTutorProfileRequest request, CancellationToken cancellationToken = default)
@@ -62,7 +81,12 @@ namespace EngConnect.Services.Services.TutorProfile
             await _unitOfWork.TutorProfileRepository.AddAsync(profile, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
-            return Map(profile);
+            var dto = Map(profile);
+
+            // cache
+            await _tutorProfileCache.SetAsync(dto, cancellationToken);
+
+            return dto;
         }
 
         private static TutorProfileDTO Map(Entities.Entities.TutorProfile p) => new()
@@ -133,7 +157,12 @@ namespace EngConnect.Services.Services.TutorProfile
             await _unitOfWork.TutorProfileRepository.UpdateAsync(profile, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
-            return Map(profile);
+            var dto = Map(profile);
+
+            // refresh cache
+            await _tutorProfileCache.SetAsync(dto, cancellationToken);
+
+            return dto;
         }
     }
 }

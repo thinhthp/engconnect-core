@@ -2,6 +2,7 @@ using EngConnect.Api.Extensions;
 using EngConnect.Api.Hubs;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.Integrations.PayOS;
 using EngConnect.Services.Services.AI;
 using EngConnect.Services.Services.TutorSchedules;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Net.payOS;
+using StackExchange.Redis;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +27,10 @@ builder.Services.AddSingleton(sp =>
     return new PayOS(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
 });
 builder.Services.AddTransient<IPayOSClient, PayOSAdapter>();
+
+// Redis configuration
+builder.Services.AddSingleton<ITutorProfileCache, TutorProfileCache>();
+builder.Services.AddHttpClient(nameof(TutorProfileCache));
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
