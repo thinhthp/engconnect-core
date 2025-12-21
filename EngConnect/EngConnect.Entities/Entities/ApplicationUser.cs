@@ -31,5 +31,8 @@ namespace EngConnect.Entities.Entities
         // Chat
         public virtual ICollection<ChatParticipant> ChatParticipants { get; set; } = new List<ChatParticipant>();
         public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+
+        // Refresh tokens
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }
