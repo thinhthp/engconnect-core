@@ -802,6 +802,49 @@ namespace EngConnect.Repositories.Data
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("chatmessage_sender_id_fkey");
             });
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("refreshtoken_pkey");
+
+                entity.ToTable("refresh_token");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Token)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnName("token");
+                entity.Property(e => e.JwtId)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnName("jwt_id");
+                entity.Property(e => e.UserId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("user_id");
+                entity.Property(e => e.ExpiresAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("expires_at");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+                entity.Property(e => e.RevokedAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("revoked_at");
+                entity.Property(e => e.IsRevoked)
+                    .HasColumnName("is_revoked");
+                entity.Property(e => e.IsUsed)
+                    .HasColumnName("is_used");
+
+                entity.HasIndex(e => e.Token).IsUnique().HasDatabaseName("ux_refreshtoken_token");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.RefreshTokens)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("refreshtoken_user_id_fkey");
+            });
         }
 
         public virtual DbSet<Assignment> Assignments { get; set; }
@@ -841,5 +884,7 @@ namespace EngConnect.Repositories.Data
         public virtual DbSet<ChatParticipant> ChatParticipants { get; set; }
 
         public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

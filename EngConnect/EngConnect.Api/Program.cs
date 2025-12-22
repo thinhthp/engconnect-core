@@ -1,16 +1,23 @@
 using EngConnect.Api.Extensions;
 using EngConnect.Api.Hubs;
+using EngConnect.Api.Middlewares;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Caching.RateLimiting;
+using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.Integrations.PayOS;
 using EngConnect.Services.Services.AI;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Net.payOS;
+using StackExchange.Redis;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +31,17 @@ builder.Services.AddSingleton(sp =>
     return new PayOS(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
 });
 builder.Services.AddTransient<IPayOSClient, PayOSAdapter>();
+
+// Upstash Redis (shared HttpClient + options)
+builder.Services.AddUpstash(builder.Configuration);
+
+// Redis configuration
+builder.Services.AddSingleton<ITutorProfileCache, TutorProfileCache>();
+//builder.Services.AddHttpClient(nameof(TutorProfileCache));
+
+// Config for rate limiting
+builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection("RateLimiting"));
+builder.Services.AddSingleton<IRateLimitStore, RedisRateLimitStore>();
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -99,10 +117,18 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Forwarded headers for Render/proxies
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 // Migrate database
-//await app.ApplyMigrationsAsync();
+await app.ApplyMigrationsAsync();
 
 // Apply Cors
 app.UseCors("AllowAll");
@@ -122,6 +148,9 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+// Rate limiting middleware
+app.UseMiddleware<RedisRateLimitingMiddleware>();
 
 app.MapControllers();
 
