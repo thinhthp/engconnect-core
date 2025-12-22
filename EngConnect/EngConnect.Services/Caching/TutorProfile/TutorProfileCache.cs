@@ -1,6 +1,8 @@
-﻿using EngConnect.Services.DTOs.TutorProfile;
+﻿using EngConnect.Services.Caching.Upstash;
+using EngConnect.Services.DTOs.TutorProfile;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +18,6 @@ namespace EngConnect.Services.Caching.TutorProfile
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<TutorProfileCache> _logger;
-        private readonly string _baseUrl;
-        private readonly string _token;
         private readonly int _defaultTtlSeconds;
         private const string KeyPrefix = "tutor-profile:";
 
@@ -29,21 +29,19 @@ namespace EngConnect.Services.Caching.TutorProfile
 
         public TutorProfileCache(
             IHttpClientFactory httpClientFactory,
-            IConfiguration configuration,
+            IOptions<UpstashRedisOptions> options,
             ILogger<TutorProfileCache> logger)
         {
-            _httpClient = httpClientFactory.CreateClient(nameof(TutorProfileCache));
-            _logger = logger;
+            if (httpClientFactory == null)
+            {
+                throw new ArgumentNullException(nameof(httpClientFactory));
+            }
 
-            var section = configuration.GetSection("UpstashRedis");
-            _baseUrl = section["RestUrl"]?.TrimEnd('/')
-                       ?? throw new InvalidOperationException("UpstashRedis:RestUrl is not configured.");
-            _token = section["RestToken"]
-                     ?? throw new InvalidOperationException("UpstashRedis:RestToken is not configured.");
-            _defaultTtlSeconds = int.TryParse(section["DefaultTtlSeconds"], out var ttl) ? ttl : 1800;
+            _httpClient = httpClientFactory.CreateClient("UpstashClient");
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+            var opts = options?.Value ?? throw new ArgumentNullException(nameof(options));
+            _defaultTtlSeconds = opts.DefaultTtlSeconds > 0 ? opts.DefaultTtlSeconds : 1800;
         }
 
         public async Task<TutorProfileDTO?> GetAsync(string tutorId, CancellationToken cancellationToken = default)
@@ -57,7 +55,7 @@ namespace EngConnect.Services.Caching.TutorProfile
             try
             {
                 var encodedKey = UrlEncoder.Default.Encode(key);
-                var url = $"{_baseUrl}/get/{encodedKey}";
+                var url = $"/get/{encodedKey}";
 
                 using var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
@@ -84,7 +82,7 @@ namespace EngConnect.Services.Caching.TutorProfile
 
         public async Task SetAsync(TutorProfileDTO profile, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(profile.TutorId))
+            if (profile == null || string.IsNullOrWhiteSpace(profile.TutorId))
             {
                 return;
             }
@@ -96,8 +94,7 @@ namespace EngConnect.Services.Caching.TutorProfile
             {
                 var encodedKey = UrlEncoder.Default.Encode(key);
                 var encodedValue = UrlEncoder.Default.Encode(value);
-
-                var url = $"{_baseUrl}/setex/{encodedKey}/{_defaultTtlSeconds}/{encodedValue}";
+                var url = $"/setex/{encodedKey}/{_defaultTtlSeconds}/{encodedValue}";
 
                 using var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
@@ -120,7 +117,7 @@ namespace EngConnect.Services.Caching.TutorProfile
             try
             {
                 var encodedKey = UrlEncoder.Default.Encode(key);
-                var url = $"{_baseUrl}/del/{encodedKey}";
+                var url = $"/del/{encodedKey}";
 
                 using var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
