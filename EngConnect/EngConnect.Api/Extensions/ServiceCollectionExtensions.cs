@@ -1,8 +1,11 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Data;
+using EngConnect.Services.Caching.Upstash;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace EngConnect.Api.Extensions
@@ -68,6 +71,35 @@ namespace EngConnect.Api.Extensions
                 options.SignInScheme = IdentityConstants.ExternalScheme;
             })
             ;
+
+            return services;
+        }
+
+        public static IServiceCollection AddUpstash(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.Configure<UpstashRedisOptions>(
+                configuration.GetSection("UpstashRedis"));
+
+            services.AddHttpClient("UpstashClient", (sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<UpstashRedisOptions>>().Value;
+
+                if (string.IsNullOrWhiteSpace(options.RestUrl))
+                {
+                    throw new InvalidOperationException("UpstashRedis:RestUrl is not configured.");
+                }
+
+                if (string.IsNullOrWhiteSpace(options.RestToken))
+                {
+                    throw new InvalidOperationException("UpstashRedis:RestToken is not configured.");
+                }
+
+                client.BaseAddress = new Uri(options.RestUrl.TrimEnd('/'));
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", options.RestToken);
+            });
 
             return services;
         }
