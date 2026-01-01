@@ -44,22 +44,28 @@ jobs:
 
       - name: Configure Web App to use Managed Identity
         run: |
-          # 1. Get the FULL Resource ID of the Managed Identity
+          # 1. Get the FULL Resource ID and Client ID of the Managed Identity
           IDENTITY_ID=$(az identity show --name "ua-id-8e6e" --resource-group "$AZURE_RESOURCE_GROUP" --query id -o tsv)
+          CLIENT_ID=$(az identity show --name "ua-id-8e6e" --resource-group "$AZURE_RESOURCE_GROUP" --query clientId -o tsv)
 
-          # 2. Assign the identity using its FULL ID
+          # 2. Assign the identity to the Web App
           az webapp identity assign \
             --name "$AZURE_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --identities "$IDENTITY_ID"
 
-          # 3. Configure the container settings and enable Identity Pull
+          # 3. Set the container image
           az webapp config container set \
             --name "$AZURE_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --container-image-name "$IMAGE" \
-            --container-registry-url "https://$AZURE_CONTAINER_REGISTRY" \
-            --acr-use-identity true
+            --container-registry-url "https://$AZURE_CONTAINER_REGISTRY"
+
+          # 4. Enable Managed Identity for ACR pulls using generic-configurations
+          az webapp config set \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --generic-configurations '{"acrUseManagedIdentityCreds": true, "acrUserManagedIdentityID": "'"$CLIENT_ID"'"}'
 
       - name: Restart Web App
         run: |
