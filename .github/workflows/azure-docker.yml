@@ -44,23 +44,21 @@ jobs:
 
       - name: Configure Web App to use Managed Identity
         run: |
-          # 1. Update the image name and registry URL
-          az webapp config container set \
-            --name "$AZURE_WEBAPP_NAME" \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --docker-custom-image-name "$IMAGE" \
-            --docker-registry-server-url "https://$AZURE_CONTAINER_REGISTRY"
+          # 1. Get the FULL Resource ID of the Managed Identity
+          IDENTITY_ID=$(az identity show --name "ua-id-8e6e" --resource-group "$AZURE_RESOURCE_GROUP" --query id -o tsv)
 
-          # 2. Tell the Web App to use the User-Assigned Managed Identity for pulling images
+          # 2. Assign the identity using its FULL ID
           az webapp identity assign \
             --name "$AZURE_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
-            --identities "ua-id-8e6e"
+            --identities "$IDENTITY_ID"
 
-          # 3. Explicitly set the app to use the identity for container pulls
+          # 3. Configure the container settings and enable Identity Pull
           az webapp config container set \
             --name "$AZURE_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
+            --container-image-name "$IMAGE" \
+            --container-registry-url "https://$AZURE_CONTAINER_REGISTRY" \
             --acr-use-identity true
 
       - name: Restart Web App
