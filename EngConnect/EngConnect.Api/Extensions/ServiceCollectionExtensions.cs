@@ -55,7 +55,7 @@ namespace EngConnect.Api.Extensions
                     {
                         var accessToken = ctx.Request.Query["access_token"];
                         var path = ctx.HttpContext.Request.Path;
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/hubs/call"))
                             ctx.Token = accessToken;
                         return Task.CompletedTask;
                     }

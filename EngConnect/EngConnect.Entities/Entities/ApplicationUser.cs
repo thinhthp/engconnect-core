@@ -34,5 +34,16 @@ namespace EngConnect.Entities.Entities
 
         // Refresh tokens
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        // Call
+        public virtual ICollection<CallParticipant> CallParticipants { get; set; } = new HashSet<CallParticipant>();
+
+        public virtual ICollection<CallSession> OutgoingCallSessions { get; set; } = new HashSet<CallSession>();
+
+        public virtual ICollection<CallSession> IncomingCallSessions { get; set; } = new HashSet<CallSession>();
+
+        public virtual ICollection<CallSignal> SentCallSignals { get; set; } = new HashSet<CallSignal>();
+
+        public virtual ICollection<CallSignal> ReceivedCallSignals { get; set; } = new HashSet<CallSignal>();
     }
 }
