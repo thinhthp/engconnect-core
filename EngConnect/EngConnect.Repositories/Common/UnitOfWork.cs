@@ -1,5 +1,6 @@
 ﻿using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Calls;
 using EngConnect.Repositories.Repositories.Chat;
 using EngConnect.Repositories.Repositories.Courses;
 using EngConnect.Repositories.Repositories.Enrollments;
@@ -45,6 +46,9 @@ namespace EngConnect.Repositories.Common
         public IChatThreadRepository ChatThreadRepository { get; private set; }
         public IChatParticipantRepository ChatParticipantRepository { get; private set; }
         public IChatMessageRepository ChatMessageRepository { get; private set; }
+        public ICallSessionRepository CallSessionRepository { get; }
+        public ICallParticipantRepository CallParticipantRepository { get; }
+        public ICallSignalRepository CallSignalRepository { get; }
 
         public UnitOfWork(EngConnectContext context)
         {
@@ -69,6 +73,9 @@ namespace EngConnect.Repositories.Common
             ChatThreadRepository = new ChatThreadRepository(_context);
             ChatParticipantRepository = new ChatParticipantRepository(_context);
             ChatMessageRepository = new ChatMessageRepository(_context);
+            CallSessionRepository = new CallSessionRepository(_context);
+            CallParticipantRepository = new CallParticipantRepository(_context);
+            CallSignalRepository = new CallSignalRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()

@@ -1,4 +1,5 @@
 ﻿using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Calls;
 using EngConnect.Repositories.Repositories.Chat;
 using EngConnect.Repositories.Repositories.Courses;
 using EngConnect.Repositories.Repositories.Enrollments;
@@ -43,5 +44,8 @@ namespace EngConnect.Repositories.Common
         IChatThreadRepository ChatThreadRepository { get; }
         IChatParticipantRepository ChatParticipantRepository { get; }
         IChatMessageRepository ChatMessageRepository { get; }
+        ICallSessionRepository CallSessionRepository { get; }
+        ICallParticipantRepository CallParticipantRepository { get; }
+        ICallSignalRepository CallSignalRepository { get; }
     }
 }
