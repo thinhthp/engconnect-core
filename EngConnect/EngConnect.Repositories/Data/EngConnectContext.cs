@@ -858,6 +858,14 @@ namespace EngConnect.Repositories.Data
                     .HasColumnType("timestamptz")
                     .HasColumnName("update_date");
 
+                entity.Property(e => e.RecordingFilePath)
+                    .HasMaxLength(1024)
+                    .HasColumnName("recording_file_path");
+
+                entity.Property(e => e.RecordingCompleted)
+                    .HasDefaultValue(false)
+                    .HasColumnName("recording_completed");
+
                 entity.HasOne(d => d.Caller).WithMany(p => p.OutgoingCallSessions)
                     .HasForeignKey(d => d.CallerId)
                     .OnDelete(DeleteBehavior.Restrict)

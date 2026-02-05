@@ -26,6 +26,10 @@ namespace EngConnect.Entities.Entities
         public string? UpdateBy { get; set; }
         public DateTimeOffset? UpdateDate { get; set; }
 
+        // Recording info
+        public string? RecordingFilePath { get; set; }
+        public bool RecordingCompleted { get; set; }
+
         public virtual ApplicationUser Caller { get; set; } = null!;
         public virtual ApplicationUser Callee { get; set; } = null!;
 
