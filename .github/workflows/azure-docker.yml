@@ -1,0 +1,74 @@
+name: Build and deploy Docker to Azure Web App
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  IMAGE_NAME: engconnect-api
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: |
+          # Log in to ACR using the Azure CLI session (no password needed)
+          az acr login --name $(echo $AZURE_CONTAINER_REGISTRY | cut -d'.' -f1)
+
+      - name: Build and push image
+        run: |
+          TAG=${{ github.sha }}
+          IMAGE="$AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:$TAG"
+
+          docker build \
+            -f EngConnect/EngConnect.Api/Dockerfile \
+            -t "$IMAGE" \
+            .
+
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Configure Web App to use Managed Identity
+        run: |
+          # 1. Get the FULL Resource ID and Client ID of the Managed Identity
+          IDENTITY_ID=$(az identity show --name "ua-id-8e6e" --resource-group "$AZURE_RESOURCE_GROUP" --query id -o tsv)
+          CLIENT_ID=$(az identity show --name "ua-id-8e6e" --resource-group "$AZURE_RESOURCE_GROUP" --query clientId -o tsv)
+
+          # 2. Assign the identity to the Web App
+          az webapp identity assign \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --identities "$IDENTITY_ID"
+
+          # 3. Set the container image
+          az webapp config container set \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --container-image-name "$IMAGE" \
+            --container-registry-url "https://$AZURE_CONTAINER_REGISTRY"
+
+          # 4. Enable Managed Identity for ACR pulls using generic-configurations
+          az webapp config set \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --generic-configurations '{"acrUseManagedIdentityCreds": true, "acrUserManagedIdentityID": "'"$CLIENT_ID"'"}'
+
+      - name: Restart Web App
+        run: |
+          az webapp restart \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP"

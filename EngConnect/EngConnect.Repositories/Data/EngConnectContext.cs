@@ -803,6 +803,214 @@ namespace EngConnect.Repositories.Data
                     .HasConstraintName("chatmessage_sender_id_fkey");
             });
 
+            // Call-related entities start
+            modelBuilder.Entity<CallSession>(entity =>
+            {
+                entity.HasKey(e => e.CallSessionId).HasName("callsession_pkey");
+
+                entity.ToTable("call_session");
+
+                entity.Property(e => e.CallSessionId).HasColumnName("call_session_id");
+
+                entity.Property(e => e.CallerId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("caller_id");
+
+                entity.Property(e => e.CalleeId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("callee_id");
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .HasDefaultValueSql("'pending'::character varying")
+                    .HasColumnName("status");
+
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+
+                entity.Property(e => e.StartedAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("started_at");
+
+                entity.Property(e => e.EndedAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("ended_at");
+
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+
+                entity.Property(e => e.RecordingFilePath)
+                    .HasMaxLength(1024)
+                    .HasColumnName("recording_file_path");
+
+                entity.Property(e => e.RecordingCompleted)
+                    .HasDefaultValue(false)
+                    .HasColumnName("recording_completed");
+
+                entity.HasOne(d => d.Caller).WithMany(p => p.OutgoingCallSessions)
+                    .HasForeignKey(d => d.CallerId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("callsession_caller_id_fkey");
+
+                entity.HasOne(d => d.Callee).WithMany(p => p.IncomingCallSessions)
+                    .HasForeignKey(d => d.CalleeId)
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .HasConstraintName("callsession_callee_id_fkey");
+            });
+
+            modelBuilder.Entity<CallParticipant>(entity =>
+            {
+                entity.HasKey(e => e.ParticipantId).HasName("callparticipant_pkey");
+
+                entity.ToTable("call_participant");
+
+                entity.Property(e => e.ParticipantId).HasColumnName("participant_id");
+
+                entity.Property(e => e.CallSessionId).HasColumnName("call_session_id");
+
+                entity.Property(e => e.UserId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("user_id");
+
+                entity.Property(e => e.IsCaller).HasColumnName("is_caller");
+                entity.Property(e => e.IsConnected).HasColumnName("is_connected");
+                entity.Property(e => e.IsMuted).HasColumnName("is_muted");
+                entity.Property(e => e.IsVideoEnabled).HasColumnName("is_video_enabled");
+
+                entity.Property(e => e.JoinedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("joined_at");
+
+                entity.Property(e => e.LeftAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("left_at");
+
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+
+                entity.HasIndex(e => new { e.CallSessionId, e.UserId })
+                    .IsUnique()
+                    .HasDatabaseName("ux_call_participant_session_user");
+
+                entity.HasOne(d => d.CallSession).WithMany(p => p.Participants)
+                    .HasForeignKey(d => d.CallSessionId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("callparticipant_call_session_id_fkey");
+
+                entity.HasOne(d => d.User).WithMany(p => p.CallParticipants)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("callparticipant_user_id_fkey");
+            });
+
+            modelBuilder.Entity<CallSignal>(entity =>
+            {
+                entity.HasKey(e => e.SignalId).HasName("callsignal_pkey");
+
+                entity.ToTable("call_signal");
+
+                entity.Property(e => e.SignalId).HasColumnName("signal_id");
+
+                entity.Property(e => e.CallSessionId).HasColumnName("call_session_id");
+
+                entity.Property(e => e.SenderId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("sender_id");
+
+                entity.Property(e => e.ReceiverId)
+                    .IsRequired()
+                    .HasMaxLength(450)
+                    .HasColumnName("receiver_id");
+
+                entity.Property(e => e.Type)
+                    .IsRequired()
+                    .HasMaxLength(40)
+                    .HasColumnName("type");
+
+                entity.Property(e => e.Payload)
+                    .IsRequired()
+                    .HasColumnName("payload");
+
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+
+                entity.Property(e => e.Note)
+                    .HasMaxLength(255)
+                    .HasColumnName("note");
+
+                entity.Property(e => e.CreateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("create_by");
+
+                entity.Property(e => e.UpdateBy)
+                    .HasMaxLength(40)
+                    .HasColumnName("update_by");
+
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+
+                entity.HasIndex(e => new { e.CallSessionId, e.CreatedAt })
+                    .HasDatabaseName("ix_call_signal_session_created");
+
+                entity.HasOne(d => d.CallSession).WithMany(p => p.Signals)
+                    .HasForeignKey(d => d.CallSessionId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("callsignal_call_session_id_fkey");
+
+                entity.HasOne(d => d.Sender).WithMany(p => p.SentCallSignals)
+                    .HasForeignKey(d => d.SenderId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("callsignal_sender_id_fkey");
+
+                entity.HasOne(d => d.Receiver).WithMany(p => p.ReceivedCallSignals)
+                    .HasForeignKey(d => d.ReceiverId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("callsignal_receiver_id_fkey");
+            });
+            // Call-related entities end
+
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("refreshtoken_pkey");
@@ -886,5 +1094,11 @@ namespace EngConnect.Repositories.Data
         public virtual DbSet<ChatMessage> ChatMessages { get; set; }
 
         public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        public virtual DbSet<CallSession> CallSessions { get; set; }
+
+        public virtual DbSet<CallParticipant> CallParticipants { get; set; }
+
+        public virtual DbSet<CallSignal> CallSignals { get; set; }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EngConnect.Repositories.Migrations
 {
     [DbContext(typeof(EngConnectContext))]
-    partial class EngConnectContextModelSnapshot : ModelSnapshot
+    [Migration("20260127170623_AddCalls")]
+    partial class AddCalls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -314,17 +317,6 @@ namespace EngConnect.Repositories.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("note");
-
-                    b.Property<bool>("RecordingCompleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("recording_completed");
-
-                    b.Property<string>("RecordingFilePath")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)")
-                        .HasColumnName("recording_file_path");
 
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("timestamptz")
