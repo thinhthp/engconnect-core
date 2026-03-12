@@ -16,9 +16,6 @@ using EngConnect.Repositories.Repositories.TutorSchedules;
 using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Common
@@ -27,56 +24,52 @@ namespace EngConnect.Repositories.Common
     {
         private readonly EngConnectContext _context;
 
-        // public ISomethingRepository SomethingRepository { get; private set; }
-        // Right here baby
-        public ITutorProfileRepository TutorProfileRepository { get; private set; }
-        public ICourseRepository CourseRepository { get; private set; }
-        public IEnrolmentRepository EnrolmentRepository { get; private set; }
-        public ISubmissionRepository SubmissionRepository { get; private set; }
-        public IAssignmentRepository AssignmentRepository { get; private set; }
-        public ISessionRepository SessionRepository { get; }
-        public IOrderRepository OrderRepository { get; private set; }
-        public ICourseModuleRepository CourseModuleRepository { get; private set; }
-        public ILessonRepository LessonRepository { get; private set; }
-        public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository { get; private set; }
-        public ITutorScheduleRepository TutorScheduleRepository { get; private set; }
-        public IPaymentRepository PaymentRepository { get; private set; }
-        public IReviewRepository ReviewRepository { get; private set; }
-        public ICourseReviewRepository CourseReviewRepository { get; private set; }
-        public IChatThreadRepository ChatThreadRepository { get; private set; }
-        public IChatParticipantRepository ChatParticipantRepository { get; private set; }
-        public IChatMessageRepository ChatMessageRepository { get; private set; }
-        public ICallSessionRepository CallSessionRepository { get; }
-        public ICallParticipantRepository CallParticipantRepository { get; }
-        public ICallSignalRepository CallSignalRepository { get; }
+        private ITutorProfileRepository? _tutorProfileRepository;
+        private ICourseRepository? _courseRepository;
+        private IEnrolmentRepository? _enrolmentRepository;
+        private ISubmissionRepository? _submissionRepository;
+        private IAssignmentRepository? _assignmentRepository;
+        private ISessionRepository? _sessionRepository;
+        private IOrderRepository? _orderRepository;
+        private ICourseModuleRepository? _courseModuleRepository;
+        private ILessonRepository? _lessonRepository;
+        private ITutorWeeklyAvailabilityRepository? _tutorWeeklyAvailabilityRepository;
+        private ITutorScheduleRepository? _tutorScheduleRepository;
+        private IPaymentRepository? _paymentRepository;
+        private IReviewRepository? _reviewRepository;
+        private ICourseReviewRepository? _courseReviewRepository;
+        private IChatThreadRepository? _chatThreadRepository;
+        private IChatParticipantRepository? _chatParticipantRepository;
+        private IChatMessageRepository? _chatMessageRepository;
+        private ICallSessionRepository? _callSessionRepository;
+        private ICallParticipantRepository? _callParticipantRepository;
+        private ICallSignalRepository? _callSignalRepository;
 
         public UnitOfWork(EngConnectContext context)
         {
             _context = context;
-
-            // SomethingRepository = new SomethingRepository(_context);
-            // Right here baby
-            TutorProfileRepository = new TutorProfileRepository(_context);
-            CourseRepository = new CourseRepository(_context);
-            EnrolmentRepository = new EnrollmentRepository(_context);
-            SubmissionRepository = new SubmissionRepository(_context);
-            AssignmentRepository = new AssignmentRepository(_context);
-            SessionRepository = new SessionReposository(_context);
-            CourseModuleRepository = new CourseModuleRepository(_context);
-            LessonRepository = new LessonRepository(_context);
-            TutorWeeklyAvailabilityRepository = new TutorWeeklyAvailabilityRepository(_context);
-            TutorScheduleRepository = new TutorScheduleRepository(_context);
-            OrderRepository = new OrderRepository(_context);
-            PaymentRepository = new PaymentRepository(_context);
-            ReviewRepository = new ReviewRepository(_context);
-            CourseReviewRepository = new CourseReviewRepository(_context);
-            ChatThreadRepository = new ChatThreadRepository(_context);
-            ChatParticipantRepository = new ChatParticipantRepository(_context);
-            ChatMessageRepository = new ChatMessageRepository(_context);
-            CallSessionRepository = new CallSessionRepository(_context);
-            CallParticipantRepository = new CallParticipantRepository(_context);
-            CallSignalRepository = new CallSignalRepository(_context);
         }
+
+        public ITutorProfileRepository TutorProfileRepository => _tutorProfileRepository ??= new TutorProfileRepository(_context);
+        public ICourseRepository CourseRepository => _courseRepository ??= new CourseRepository(_context);
+        public IEnrolmentRepository EnrolmentRepository => _enrolmentRepository ??= new EnrollmentRepository(_context);
+        public ISubmissionRepository SubmissionRepository => _submissionRepository ??= new SubmissionRepository(_context);
+        public IAssignmentRepository AssignmentRepository => _assignmentRepository ??= new AssignmentRepository(_context);
+        public ISessionRepository SessionRepository => _sessionRepository ??= new SessionReposository(_context);
+        public IOrderRepository OrderRepository => _orderRepository ??= new OrderRepository(_context);
+        public ICourseModuleRepository CourseModuleRepository => _courseModuleRepository ??= new CourseModuleRepository(_context);
+        public ILessonRepository LessonRepository => _lessonRepository ??= new LessonRepository(_context);
+        public ITutorWeeklyAvailabilityRepository TutorWeeklyAvailabilityRepository => _tutorWeeklyAvailabilityRepository ??= new TutorWeeklyAvailabilityRepository(_context);
+        public ITutorScheduleRepository TutorScheduleRepository => _tutorScheduleRepository ??= new TutorScheduleRepository(_context);
+        public IPaymentRepository PaymentRepository => _paymentRepository ??= new PaymentRepository(_context);
+        public IReviewRepository ReviewRepository => _reviewRepository ??= new ReviewRepository(_context);
+        public ICourseReviewRepository CourseReviewRepository => _courseReviewRepository ??= new CourseReviewRepository(_context);
+        public IChatThreadRepository ChatThreadRepository => _chatThreadRepository ??= new ChatThreadRepository(_context);
+        public IChatParticipantRepository ChatParticipantRepository => _chatParticipantRepository ??= new ChatParticipantRepository(_context);
+        public IChatMessageRepository ChatMessageRepository => _chatMessageRepository ??= new ChatMessageRepository(_context);
+        public ICallSessionRepository CallSessionRepository => _callSessionRepository ??= new CallSessionRepository(_context);
+        public ICallParticipantRepository CallParticipantRepository => _callParticipantRepository ??= new CallParticipantRepository(_context);
+        public ICallSignalRepository CallSignalRepository => _callSignalRepository ??= new CallSignalRepository(_context);
 
         public async Task<int> SaveChangesAsync()
         {
@@ -96,7 +89,7 @@ namespace EngConnect.Repositories.Common
 
         public void Dispose()
         {
-            _context?.Dispose();
+            _context.Dispose();
         }
     }
 }
