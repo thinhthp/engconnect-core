@@ -1,5 +1,7 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Submissions;
 using EngConnect.Services.DTOs.Submissions;
 using EngConnect.Services.Services.UserContext;
 
@@ -7,11 +9,20 @@ namespace EngConnect.Services.Services.Submissions;
 
 public class SubmissionService : ISubmissionService
 {
-    private IUnitOfWork _unitOfWork;
-    private IUserContextService _user;
-    public SubmissionService(IUnitOfWork unitOfWork, IUserContextService user)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IAssignmentRepository _assignmentRepository;
+    private readonly ISubmissionRepository _submissionRepository;
+    private readonly IUserContextService _user;
+
+    public SubmissionService(
+        IUnitOfWork unitOfWork,
+        IAssignmentRepository assignmentRepository,
+        ISubmissionRepository submissionRepository,
+        IUserContextService user)
     {
         _unitOfWork = unitOfWork;
+        _assignmentRepository = assignmentRepository;
+        _submissionRepository = submissionRepository;
         _user = user;
     }
 
@@ -23,10 +34,8 @@ public class SubmissionService : ISubmissionService
             throw new UnauthorizedAccessException("User is not authenticated.");
         }
         var assignment =
-            await _unitOfWork.AssignmentRepository.GetAssignmentById(dto.AssignmentId, cancellationToken) ?? throw new InvalidOperationException("Assignment is not found");
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-       
-       
+            await _assignmentRepository.GetByIdAsync(dto.AssignmentId, cancellationToken) ?? throw new InvalidOperationException("Assignment is not found");
+
         var entity = new Submission()
         {
             AssignmentId = dto.AssignmentId,
@@ -43,27 +52,26 @@ public class SubmissionService : ISubmissionService
             CreateBy = currentUser.UserName
 
         };
-        await _unitOfWork.SubmissionRepository.AddAsync(entity, cancellationToken);
+        await _submissionRepository.AddAsync(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync();
-         return new SubmissionDTO
-            {
-                SubmissionId = entity.SubmissionId,
-                AssignmentId = entity.AssignmentId,
-                LearnerId = entity.LearnerId,
-                Content = entity.Content,
-                SubmittedAt = entity.SubmittedAt,
-                Status = entity.Status,
-                Note = entity.Note,
-                IsActive = entity.IsActive,
-                CreatedAt = entity.CreatedAt,
-                CreateBy = entity.CreateBy
-               
-            };
+        return new SubmissionDTO
+        {
+            SubmissionId = entity.SubmissionId,
+            AssignmentId = entity.AssignmentId,
+            LearnerId = entity.LearnerId,
+            Content = entity.Content,
+            SubmittedAt = entity.SubmittedAt,
+            Status = entity.Status,
+            Note = entity.Note,
+            IsActive = entity.IsActive,
+            CreatedAt = entity.CreatedAt,
+            CreateBy = entity.CreateBy
+        };
     }
 
     public async Task<SubmissionDTO> GetSubmissionById(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.SubmissionRepository.GetSubmissionById(id);
+        var entity = await _submissionRepository.GetSubmissionById(id, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException("Submission is not found");
@@ -92,12 +100,12 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionDTO> GetSubmissionByLearner(CancellationToken cancellationToken = default)
     {
-        var currentuser =  _user.GetCurrentUserId();
+        var currentuser = _user.GetCurrentUserId();
         if (currentuser == null)
         {
             throw new UnauthorizedAccessException("User is not authenticated.");
-        };
-        var entity = await _unitOfWork.SubmissionRepository.GetSubmissionByLearner(currentuser,cancellationToken);
+        }
+        var entity = await _submissionRepository.GetSubmissionByLearner(currentuser, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException("Submission is not found");

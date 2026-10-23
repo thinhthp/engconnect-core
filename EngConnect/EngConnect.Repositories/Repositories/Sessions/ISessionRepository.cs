@@ -1,8 +1,9 @@
 using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 
 namespace EngConnect.Repositories.Repositories.Sessions;
 
-public interface ISessionRepository
+public interface ISessionRepository : IGenericRepository<Session>
 {
     Task<Session> CreateSession(Session session, CancellationToken cancellationToken = default);
     // void CancelSession(Session session, CancellationToken cancellationToken = default);

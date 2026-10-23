@@ -1,14 +1,9 @@
 ﻿using EngConnect.Entities.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EngConnect.Repositories.Common;
 
 namespace EngConnect.Repositories.Repositories.Calls
 {
-    public interface ICallSignalRepository
+    public interface ICallSignalRepository : IGenericRepository<CallSignal>
     {
-        Task AddAsync(CallSignal signal, CancellationToken cancellationToken = default);
     }
 }

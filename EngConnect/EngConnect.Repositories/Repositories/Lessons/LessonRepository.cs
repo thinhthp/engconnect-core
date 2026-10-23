@@ -1,56 +1,35 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Lessons
 {
-    public class LessonRepository : ILessonRepository
+    public class LessonRepository : GenericRepository<Lesson>, ILessonRepository
     {
-        private readonly EngConnectContext _context;
-        public LessonRepository(EngConnectContext context)
+        public LessonRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<Lesson?> GetByIdAsync(int lessonId)
         {
-            return await _context.Lessons
+            return await _dbSet
                 .AsNoTracking()
                 .FirstOrDefaultAsync(l => l.LessonId == lessonId);
         }
 
         public async Task<IReadOnlyList<Lesson>> GetByModuleIdAsync(int moduleId)
         {
-            return await _context.Lessons
+            return await _dbSet
                 .Where(l => l.ModuleId == moduleId)
                 .OrderBy(l => l.Position)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task AddAsync(Lesson lesson)
-        {
-            await _context.Lessons.AddAsync(lesson);
-        }
-
-        public void Update(Lesson lesson)
-        {
-            _context.Lessons.Update(lesson);
-        }
-
-        public void Remove(Lesson lesson)
-        {
-            _context.Lessons.Remove(lesson);
-        }
-
         public async Task<int> GetNextPositionAsync(int moduleId)
         {
-            var max = await _context.Lessons
+            var max = await _dbSet
                 .Where(l => l.ModuleId == moduleId)
                 .Select(l => (int?)l.Position)
                 .MaxAsync();
@@ -60,7 +39,7 @@ namespace EngConnect.Repositories.Repositories.Lessons
 
         public async Task ShiftPositionsUpFromAsync(int moduleId, int fromPosition)
         {
-            var affected = await _context.Lessons
+            var affected = await _dbSet
                 .Where(l => l.ModuleId == moduleId && l.Position >= fromPosition)
                 .ToListAsync();
 
@@ -70,7 +49,7 @@ namespace EngConnect.Repositories.Repositories.Lessons
 
         public async Task ReorderAfterDeletionAsync(int moduleId, int deletedPosition)
         {
-            var affected = await _context.Lessons
+            var affected = await _dbSet
                 .Where(l => l.ModuleId == moduleId && l.Position > deletedPosition)
                 .ToListAsync();
 
@@ -84,7 +63,7 @@ namespace EngConnect.Repositories.Repositories.Lessons
 
             if (newPosition < oldPosition)
             {
-                var affected = await _context.Lessons
+                var affected = await _dbSet
                     .Where(l => l.ModuleId == moduleId &&
                                 l.Position >= newPosition &&
                                 l.Position < oldPosition)
@@ -94,7 +73,7 @@ namespace EngConnect.Repositories.Repositories.Lessons
             }
             else
             {
-                var affected = await _context.Lessons
+                var affected = await _dbSet
                     .Where(l => l.ModuleId == moduleId &&
                                 l.Position <= newPosition &&
                                 l.Position > oldPosition)

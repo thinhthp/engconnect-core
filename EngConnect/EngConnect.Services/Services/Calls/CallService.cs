@@ -1,6 +1,7 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Repositories.Repositories.Calls;
 using EngConnect.Services.DTOs.Calls;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -15,11 +16,17 @@ namespace EngConnect.Services.Services.Calls
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly EngConnectContext _context;
+        private readonly ICallSessionRepository _callSessionRepository;
+        private readonly ICallParticipantRepository _callParticipantRepository;
+        private readonly ICallSignalRepository _callSignalRepository;
 
-        public CallService(IUnitOfWork unitOfWork, EngConnectContext context)
+        public CallService(IUnitOfWork unitOfWork, EngConnectContext context, ICallParticipantRepository callParticipantRepository, ICallSessionRepository callSessionRepository, ICallSignalRepository callSignalRepository)
         {
             _unitOfWork = unitOfWork;
             _context = context;
+            _callParticipantRepository = callParticipantRepository;
+            _callSessionRepository = callSessionRepository;
+            _callSignalRepository = callSignalRepository;
         }
 
         public async Task<long> StartCallAsync(string callerId, StartCallRequest request, CancellationToken cancellationToken = default)
@@ -72,8 +79,8 @@ namespace EngConnect.Services.Services.Calls
 
             session.Participants = participants.ToList();
 
-            await _unitOfWork.CallSessionRepository.AddAsync(session, cancellationToken);
-            await _unitOfWork.CallParticipantRepository.AddRangeAsync(participants, cancellationToken);
+            await _callSessionRepository.AddAsync(session, cancellationToken);
+            await _callParticipantRepository.AddRangeAsync(participants, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             return session.CallSessionId;
@@ -81,7 +88,7 @@ namespace EngConnect.Services.Services.Calls
 
         public async Task<string> ChangeCallStatusAsync(string userId, CallStatusChangeRequest request, CancellationToken cancellationToken = default)
         {
-            var session = await _unitOfWork.CallSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
+            var session = await _callSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
             if (session == null)
                 throw new KeyNotFoundException("Call session not found.");
 
@@ -114,7 +121,7 @@ namespace EngConnect.Services.Services.Calls
             session.UpdateBy = userId;
             session.UpdateDate = now;
 
-            await _unitOfWork.CallSessionRepository.UpdateAsync(session, cancellationToken);
+            await _callSessionRepository.UpdateAsync(session, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             return session.Status;
@@ -123,7 +130,7 @@ namespace EngConnect.Services.Services.Calls
         public async Task<(long CallSessionId, string FromUserId, string Type, string Payload, DateTimeOffset CreatedAt)>
             AddSignalAsync(string senderId, CallSignalRequest request, CancellationToken cancellationToken = default)
         {
-            var session = await _unitOfWork.CallSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
+            var session = await _callSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
             if (session == null)
                 throw new KeyNotFoundException("Call session not found.");
 
@@ -144,7 +151,7 @@ namespace EngConnect.Services.Services.Calls
                 CreateBy = senderId
             };
 
-            await _unitOfWork.CallSignalRepository.AddAsync(signal, cancellationToken);
+            await _callSignalRepository.AddAsync(signal, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             return (request.CallSessionId, senderId, request.Type, request.Payload, now);
@@ -152,7 +159,7 @@ namespace EngConnect.Services.Services.Calls
 
         public async Task<CallSession?> GetByIdAsync(long id, CancellationToken cancellationToken = default)
         {
-            return await _unitOfWork.CallSessionRepository.GetByIdAsync(id, cancellationToken);
+            return await _callSessionRepository.GetByIdAsync(id, cancellationToken);
         }
     }
 }

@@ -1,14 +1,9 @@
 ﻿using EngConnect.Entities.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EngConnect.Repositories.Common;
 
 namespace EngConnect.Repositories.Repositories.Calls
 {
-    public interface ICallParticipantRepository
+    public interface ICallParticipantRepository : IGenericRepository<CallParticipant>
     {
-        Task AddRangeAsync(IEnumerable<CallParticipant> participants, CancellationToken cancellationToken = default);
     }
 }

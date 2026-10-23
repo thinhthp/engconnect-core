@@ -3,29 +3,21 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace EngConnect.Repositories.Repositories.Reviews;
 
-public class CourseReviewRepository : ICourseReviewRepository
+public class CourseReviewRepository : GenericRepository<CourseReview>, ICourseReviewRepository
 {
-    private readonly EngConnectContext _context;
-
-    public CourseReviewRepository(EngConnectContext context)
+    public CourseReviewRepository(EngConnectContext context) : base(context)
     {
-        _context = context;
-    }
-
-    public async Task<CourseReview> AddAsync(CourseReview review, CancellationToken cancellationToken = default)
-    {
-        await _context.CourseReviews.AddAsync(review, cancellationToken);
-        return review;
     }
 
     public async Task<CourseReview?> GetById(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.CourseReviews
+        return await _dbSet
             .Include(r => r.Learner)
             .Include(r => r.Course)
             .FirstOrDefaultAsync(r => r.CourseReviewId == id, cancellationToken);
@@ -33,7 +25,7 @@ public class CourseReviewRepository : ICourseReviewRepository
 
     public async Task<List<CourseReview>> GetByCourseId(int courseId, CancellationToken cancellationToken = default)
     {
-        return await _context.CourseReviews
+        return await _dbSet
             .Include(r => r.Learner)
             .Where(r => r.CourseId == courseId && r.IsActive)
             .OrderByDescending(r => r.CreatedAt)
@@ -42,7 +34,7 @@ public class CourseReviewRepository : ICourseReviewRepository
 
     public async Task<List<CourseReview>> GetAll(CancellationToken cancellationToken = default)
     {
-        return await _context.CourseReviews
+        return await _dbSet
             .Include(r => r.Learner)
             .Include(r => r.Course)
             .Where(r => r.IsActive)
@@ -52,7 +44,7 @@ public class CourseReviewRepository : ICourseReviewRepository
 
     public Task UpdateAsync(CourseReview review, CancellationToken cancellationToken = default)
     {
-        _context.CourseReviews.Update(review);
+        Update(review);
         return Task.CompletedTask;
     }
 }

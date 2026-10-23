@@ -1,4 +1,5 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +8,10 @@ using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Lessons
 {
-    public interface ILessonRepository
+    public interface ILessonRepository : IGenericRepository<Lesson>
     {
         Task<Lesson?> GetByIdAsync(int lessonId);
         Task<IReadOnlyList<Lesson>> GetByModuleIdAsync(int moduleId);
-        Task AddAsync(Lesson lesson);
-        void Update(Lesson lesson);
-        void Remove(Lesson lesson);
 
         Task<int> GetNextPositionAsync(int moduleId);
         Task ShiftPositionsUpFromAsync(int moduleId, int fromPosition);
