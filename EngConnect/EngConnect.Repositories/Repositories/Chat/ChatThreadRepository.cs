@@ -1,26 +1,19 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Chat
 {
-    public class ChatThreadRepository : IChatThreadRepository
+    public class ChatThreadRepository : GenericRepository<ChatThread>, IChatThreadRepository
     {
-        private readonly EngConnectContext _context;
-
-        public ChatThreadRepository(EngConnectContext context)
+        public ChatThreadRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<ChatThread?> GetDirectThreadForUsersAsync(string userId, string otherUserId, CancellationToken cancellationToken = default)
         {
-            return await _context.ChatThreads
+            return await _dbSet
                 .Include(t => t.Participants)
                 .Where(t => !t.IsGroup)
                 .Where(t => t.Participants.Count == 2)
@@ -30,14 +23,9 @@ namespace EngConnect.Repositories.Repositories.Chat
                     cancellationToken);
         }
 
-        public async Task AddAsync(ChatThread thread, CancellationToken cancellationToken = default)
-        {
-            await _context.ChatThreads.AddAsync(thread, cancellationToken);
-        }
-
         public async Task<IReadOnlyList<ChatThread>> GetUserThreadsAsync(string userId, CancellationToken cancellationToken = default)
         {
-            return await _context.ChatThreads
+            return await _dbSet
                 .AsNoTracking()
                 .Include(t => t.Participants)
                 .Where(t => t.Participants.Any(p => p.UserId == userId))

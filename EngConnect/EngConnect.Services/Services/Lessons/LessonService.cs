@@ -1,21 +1,19 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Lessons;
 using EngConnect.Services.DTOs.Lessons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Services.Services.Lessons
 {
     public class LessonService : ILessonService
     {
         private readonly IUnitOfWork _uow;
+        private readonly ILessonRepository _lessonRepository;
 
-        public LessonService(IUnitOfWork uow)
+        public LessonService(IUnitOfWork uow, ILessonRepository lessonRepository)
         {
             _uow = uow;
+            _lessonRepository = lessonRepository;
         }
 
         public async Task<LessonDTO> CreateAsync(CreateLessonRequest request, string userId)
@@ -27,11 +25,11 @@ namespace EngConnect.Services.Services.Lessons
             if (request.Position.HasValue && request.Position.Value > 0)
             {
                 position = request.Position.Value;
-                await _uow.LessonRepository.ShiftPositionsUpFromAsync(request.ModuleId, position);
+                await _lessonRepository.ShiftPositionsUpFromAsync(request.ModuleId, position);
             }
             else
             {
-                position = await _uow.LessonRepository.GetNextPositionAsync(request.ModuleId);
+                position = await _lessonRepository.GetNextPositionAsync(request.ModuleId);
             }
 
             var entity = new Lesson
@@ -48,7 +46,7 @@ namespace EngConnect.Services.Services.Lessons
                 IsActive = true
             };
 
-            await _uow.LessonRepository.AddAsync(entity);
+            await _lessonRepository.AddAsync(entity);
             await _uow.SaveChangesAsync();
 
             return ToDto(entity);
@@ -56,19 +54,19 @@ namespace EngConnect.Services.Services.Lessons
 
         public async Task<IReadOnlyList<LessonDTO>> GetByModuleAsync(int moduleId)
         {
-            var list = await _uow.LessonRepository.GetByModuleIdAsync(moduleId);
+            var list = await _lessonRepository.GetByModuleIdAsync(moduleId);
             return list.Select(ToDto).ToList();
         }
 
         public async Task<LessonDTO?> GetByIdAsync(int lessonId)
         {
-            var entity = await _uow.LessonRepository.GetByIdAsync(lessonId);
+            var entity = await _lessonRepository.GetByIdAsync(lessonId);
             return entity == null ? null : ToDto(entity);
         }
 
         public async Task<LessonDTO?> UpdateAsync(int lessonId, UpdateLessonRequest request, string userId)
         {
-            var entity = await _uow.LessonRepository.GetByIdAsync(lessonId);
+            var entity = await _lessonRepository.GetByIdAsync(lessonId);
             if (entity == null) return null;
 
             var originalPosition = entity.Position;
@@ -92,17 +90,17 @@ namespace EngConnect.Services.Services.Lessons
 
             if (moduleId > 0 && request.Position.HasValue && request.Position.Value > 0 && request.Position.Value != originalPosition)
             {
-                var siblings = await _uow.LessonRepository.GetByModuleIdAsync(moduleId);
+                var siblings = await _lessonRepository.GetByModuleIdAsync(moduleId);
                 var maxPosition = siblings.Count;
                 var desired = request.Position.Value;
                 if (desired < 1) desired = 1;
                 if (desired > maxPosition) desired = maxPosition;
 
-                await _uow.LessonRepository.ApplyReorderOnMoveAsync(moduleId, originalPosition, desired);
+                await _lessonRepository.ApplyReorderOnMoveAsync(moduleId, originalPosition, desired);
                 entity.Position = desired;
             }
 
-            _uow.LessonRepository.Update(entity);
+            _lessonRepository.Update(entity);
             await _uow.SaveChangesAsync();
 
             return ToDto(entity);
@@ -110,15 +108,15 @@ namespace EngConnect.Services.Services.Lessons
 
         public async Task<bool> DeleteAsync(int lessonId, string userId)
         {
-            var entity = await _uow.LessonRepository.GetByIdAsync(lessonId);
+            var entity = await _lessonRepository.GetByIdAsync(lessonId);
             if (entity == null) return false;
 
             var deletedPosition = entity.Position;
             var moduleId = entity.ModuleId ?? 0;
 
-            _uow.LessonRepository.Remove(entity);
+            _lessonRepository.Remove(entity);
             if (moduleId > 0)
-                await _uow.LessonRepository.ReorderAfterDeletionAsync(moduleId, deletedPosition);
+                await _lessonRepository.ReorderAfterDeletionAsync(moduleId, deletedPosition);
 
             await _uow.SaveChangesAsync();
             return true;

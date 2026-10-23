@@ -1,27 +1,29 @@
 ﻿using EngConnect.Entities.Common;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.TutorProfile;
 using EngConnect.Repositories.Repositories.TutorProfile.Filters;
 using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.DTOs.TutorProfile;
 using EngConnect.Services.Services.TutorProfile.Filters;
 using EngConnect.Services.Services.UserContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Services.Services.TutorProfile
 {
     public class TutorProfileService : ITutorProfileService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITutorProfileRepository _tutorProfileRepository;
         private readonly IUserContextService _userContext;
         private readonly ITutorProfileCache _tutorProfileCache;
 
-        public TutorProfileService(IUnitOfWork unitOfWork, IUserContextService userContext, ITutorProfileCache tutorProfileCache)
+        public TutorProfileService(
+            IUnitOfWork unitOfWork,
+            ITutorProfileRepository tutorProfileRepository,
+            IUserContextService userContext,
+            ITutorProfileCache tutorProfileCache)
         {
             _unitOfWork = unitOfWork;
+            _tutorProfileRepository = tutorProfileRepository;
             _userContext = userContext;
             _tutorProfileCache = tutorProfileCache;
         }
@@ -40,7 +42,7 @@ namespace EngConnect.Services.Services.TutorProfile
             }
 
             // fallback to DB
-            var profile = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
+            var profile = await _tutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
             if (profile == null)
                 return null;
 
@@ -58,7 +60,7 @@ namespace EngConnect.Services.Services.TutorProfile
             if (string.IsNullOrWhiteSpace(userId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            bool exists = await _unitOfWork.TutorProfileRepository.ExistsAsync(userId, cancellationToken);
+            bool exists = await _tutorProfileRepository.ExistsAsync(userId, cancellationToken);
             if (exists)
                 throw new InvalidOperationException("Tutor profile already exists for this user.");
 
@@ -78,7 +80,7 @@ namespace EngConnect.Services.Services.TutorProfile
                 CreateBy = userId
             };
 
-            await _unitOfWork.TutorProfileRepository.AddAsync(profile, cancellationToken);
+            await _tutorProfileRepository.AddAsync(profile, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             var dto = Map(profile);
@@ -121,7 +123,7 @@ namespace EngConnect.Services.Services.TutorProfile
                 PageSize = filter.PageSize
             };
 
-            var (items, total) = await _unitOfWork.TutorProfileRepository.QueryAsync(repoParams, cancellationToken);
+            var (items, total) = await _tutorProfileRepository.QueryAsync(repoParams, cancellationToken);
             var dto = items.Select(Map).ToList();
 
             return new PagedResult<TutorProfileDTO>
@@ -139,7 +141,7 @@ namespace EngConnect.Services.Services.TutorProfile
             if (string.IsNullOrWhiteSpace(userId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            var profile = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
+            var profile = await _tutorProfileRepository.GetByTutorIdAsync(userId, cancellationToken);
             if (profile == null)
                 throw new KeyNotFoundException("Tutor profile not found.");
 
@@ -154,7 +156,7 @@ namespace EngConnect.Services.Services.TutorProfile
 
             profile.UpdateDate = DateTime.UtcNow;
 
-            await _unitOfWork.TutorProfileRepository.UpdateAsync(profile, cancellationToken);
+            await _tutorProfileRepository.UpdateAsync(profile, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             var dto = Map(profile);

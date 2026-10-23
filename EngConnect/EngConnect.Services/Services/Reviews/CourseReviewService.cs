@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EngConnect.Entities.Common;
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Courses;
+using EngConnect.Repositories.Repositories.Reviews;
 using EngConnect.Services.DTOs.Reviews;
 using EngConnect.Services.Services.UserContext;
 
@@ -13,11 +14,15 @@ namespace EngConnect.Services.Services.Reviews;
 public class CourseReviewService : ICourseReviewService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ICourseReviewRepository _courseReviewRepository;
+    private readonly ICourseRepository _courseRepository;
     private readonly IUserContextService _userContext;
 
-    public CourseReviewService(IUnitOfWork uow, IUserContextService userContext)
+    public CourseReviewService(IUnitOfWork uow, ICourseReviewRepository courseReviewRepository, ICourseRepository courseRepository, IUserContextService userContext)
     {
         _uow = uow;
+        _courseReviewRepository = courseReviewRepository;
+        _courseRepository = courseRepository;
         _userContext = userContext;
     }
 
@@ -25,7 +30,7 @@ public class CourseReviewService : ICourseReviewService
     {
         var currentUser = await _userContext.GetCurrentUserAsync(cancellationToken) ?? throw new UnauthorizedAccessException("User is not authenticated");
 
-        var course = await _uow.CourseRepository.GetByIdAsync(request.CourseId, cancellationToken);
+        var course = await _courseRepository.GetByIdAsync(request.CourseId, cancellationToken);
         if (course == null) throw new KeyNotFoundException("Course not found");
 
         var entity = new CourseReview
@@ -39,7 +44,7 @@ public class CourseReviewService : ICourseReviewService
             CreateBy = currentUser.UserName
         };
 
-        await _uow.CourseReviewRepository.AddAsync(entity, cancellationToken);
+        await _courseReviewRepository.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync();
 
         return MapToDto(entity);
@@ -47,7 +52,7 @@ public class CourseReviewService : ICourseReviewService
 
     public async Task<CourseReviewDTO> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.CourseReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
+        var entity = await _courseReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
         return MapToDto(entity);
     }
 
@@ -56,8 +61,7 @@ public class CourseReviewService : ICourseReviewService
         if (pageNumber <= 0) pageNumber = 1;
         if (pageSize <= 0) pageSize = 10;
 
-      
-        var all = await _uow.CourseReviewRepository.GetByCourseId(courseId, cancellationToken);
+        var all = await _courseReviewRepository.GetByCourseId(courseId, cancellationToken);
         var total = all.Count;
         var pagedItems = all
             .Skip((pageNumber - 1) * pageSize)
@@ -80,8 +84,7 @@ public class CourseReviewService : ICourseReviewService
         if (pageNumber <= 0) pageNumber = 1;
         if (pageSize <= 0) pageSize = 10;
 
-      
-        var all = await _uow.CourseReviewRepository.GetAll(cancellationToken);
+        var all = await _courseReviewRepository.GetAll(cancellationToken);
         var total = all.Count;
         var pagedItems = all
             .Skip((pageNumber - 1) * pageSize)
@@ -101,7 +104,7 @@ public class CourseReviewService : ICourseReviewService
 
     public async Task<CourseReviewDTO> UpdateAsync(UpdateCourseReviewRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.CourseReviewRepository.GetById(request.CourseReviewId, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
+        var entity = await _courseReviewRepository.GetById(request.CourseReviewId, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
 
         entity.Rating = request.Rating;
         entity.Comment = request.Comment;
@@ -110,7 +113,7 @@ public class CourseReviewService : ICourseReviewService
         var currentUser = await _userContext.GetCurrentUserAsync(cancellationToken);
         if (currentUser != null) entity.UpdateBy = currentUser.UserName;
 
-        await _uow.CourseReviewRepository.UpdateAsync(entity, cancellationToken);
+        await _courseReviewRepository.UpdateAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync();
 
         return MapToDto(entity);
@@ -118,9 +121,9 @@ public class CourseReviewService : ICourseReviewService
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.CourseReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
+        var entity = await _courseReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Course review not found");
         entity.IsActive = false;
-        await _uow.CourseReviewRepository.UpdateAsync(entity, cancellationToken);
+        await _courseReviewRepository.UpdateAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync();
     }
 

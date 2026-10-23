@@ -11,27 +11,33 @@ namespace EngConnect.Services.Services.Admin
 {
     using Microsoft.AspNetCore.Identity;
     using EngConnect.Entities.Entities;
+    using EngConnect.Repositories.Repositories.Courses;
+    using EngConnect.Repositories.Repositories.TutorProfile;
 
     public class AdminService : IAdminService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserContextService _userContext;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ICourseRepository _courseRepository;
+        private readonly ITutorProfileRepository _tutorProfileRepository;
 
         private const string StatusApproved = "approved";
         private const string StatusRejected = "rejected";
         private const string TutorRejectedNote = "Rejected by admin, please check your mail for detail.";
 
-        public AdminService(IUnitOfWork unitOfWork, IUserContextService userContext, UserManager<ApplicationUser> userManager)
+        public AdminService(IUnitOfWork unitOfWork, IUserContextService userContext, UserManager<ApplicationUser> userManager, ICourseRepository courseRepository, ITutorProfileRepository tutorProfileRepository)
         {
             _unitOfWork = unitOfWork;
             _userContext = userContext;
             _userManager = userManager;
+            _courseRepository = courseRepository;
+            _tutorProfileRepository = tutorProfileRepository;
         }
 
         public async Task<bool> ApproveCourseAsync(int courseId, CancellationToken cancellationToken = default)
         {
-            var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseId, cancellationToken);
+            var course = await _courseRepository.GetByIdAsync(courseId, cancellationToken);
             if (course == null)
                 throw new KeyNotFoundException("Course not found.");
 
@@ -51,7 +57,7 @@ namespace EngConnect.Services.Services.Admin
 
         public async Task<bool> RejectCourseAsync(int courseId, CancellationToken cancellationToken = default)
         {
-            var course = await _unitOfWork.CourseRepository.GetByIdAsync(courseId, cancellationToken);
+            var course = await _courseRepository.GetByIdAsync(courseId, cancellationToken);
             if (course == null)
                 throw new KeyNotFoundException("Course not found.");
 
@@ -75,7 +81,7 @@ namespace EngConnect.Services.Services.Admin
             if (string.IsNullOrWhiteSpace(tutorId))
                 throw new ArgumentException("TutorId is required.", nameof(tutorId));
 
-            var tutor = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(tutorId, cancellationToken);
+            var tutor = await _tutorProfileRepository.GetByTutorIdAsync(tutorId, cancellationToken);
             if (tutor == null)
                 throw new KeyNotFoundException("Tutor not found.");
 
@@ -98,7 +104,7 @@ namespace EngConnect.Services.Services.Admin
             if (string.IsNullOrWhiteSpace(tutorId))
                 throw new ArgumentException("TutorId is required.", nameof(tutorId));
 
-            var tutor = await _unitOfWork.TutorProfileRepository.GetByTutorIdAsync(tutorId, cancellationToken);
+            var tutor = await _tutorProfileRepository.GetByTutorIdAsync(tutorId, cancellationToken);
             if (tutor == null)
                 throw new KeyNotFoundException("Tutor not found.");
 

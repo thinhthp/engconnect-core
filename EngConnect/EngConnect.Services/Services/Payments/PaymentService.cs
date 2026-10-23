@@ -2,6 +2,7 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
+using EngConnect.Repositories.Repositories.Enrollments;
 using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
 using EngConnect.Repositories.Repositories.Payments.Filters;
@@ -30,19 +31,28 @@ namespace EngConnect.Services.Services.Payments
         private readonly IUserContextService _userContext;
         private readonly PayOSOptions _opts;
         private readonly PayOS _payOSSdk;
+        private readonly IOrderRepository _orderRepository;
+        private readonly IPaymentRepository _paymentRepository;
+        private readonly IEnrolmentRepository _enrollmentRepository;
 
         public PaymentService(
             IUnitOfWork context,
             IPayOSClient payOS,
             IUserContextService userContext,
             IOptions<PayOSOptions> opts,
-            PayOS payOSSdk)
+            PayOS payOSSdk,
+            IOrderRepository orderRepository,
+            IPaymentRepository paymentRepository,
+            IEnrolmentRepository enrolmentRepository)
         {
             _context = context;
             _payOS = payOS;
             _userContext = userContext;
             _opts = opts.Value;
             _payOSSdk = payOSSdk;
+            _orderRepository = orderRepository;
+            _paymentRepository = paymentRepository;
+            _enrollmentRepository = enrolmentRepository;
         }
 
         public async Task<CreatePaymentLinkResponse> CreatePaymentLinkAsync(CreatePaymentLinkRequest request, CancellationToken cancellationToken = default)
@@ -84,7 +94,7 @@ namespace EngConnect.Services.Services.Payments
                 });
             }
 
-            await _context.OrderRepository.AddAsync(order);
+            await _orderRepository.AddAsync(order);
             await _context.SaveChangesAsync();
 
             var payment = new Payment
@@ -97,7 +107,7 @@ namespace EngConnect.Services.Services.Payments
                 CreateBy = learnerId,
                 IsActive = true
             };
-            await _context.PaymentRepository.AddAsync(payment);
+            await _paymentRepository.AddAsync(payment);
             await _context.SaveChangesAsync();
 
             // Build an order code
@@ -122,7 +132,7 @@ namespace EngConnect.Services.Services.Payments
                 ? orderCode.ToString()
                 : linkResp.TransactionCode;
 
-            _context.PaymentRepository.Update(payment);
+            _paymentRepository.Update(payment);
             await _context.SaveChangesAsync();
 
             return new CreatePaymentLinkResponse
@@ -156,14 +166,14 @@ namespace EngConnect.Services.Services.Payments
             var transactionCode = data.orderCode.ToString();
             var normalized = NormalizeFromPayOSCode(data.code, data.desc);
 
-            var payment = await _context.PaymentRepository.GetByTransactionCodeAsync(transactionCode);
+            var payment = await _paymentRepository.GetByTransactionCodeAsync(transactionCode);
             if (payment == null) return true; // ignore unknown
 
             payment.Status = normalized;
             payment.TransactionDate = DateTime.UtcNow;
-            _context.PaymentRepository.Update(payment);
+            _paymentRepository.Update(payment);
 
-            var order = await _context.OrderRepository.GetByIdWithItemsAndCoursesAsync(payment.OrderId);
+            var order = await _orderRepository.GetByIdWithItemsAndCoursesAsync(payment.OrderId);
             if (order != null)
             {
                 if (normalized == "success")
@@ -184,14 +194,14 @@ namespace EngConnect.Services.Services.Payments
                             CreateBy = order.LearnerId
                         };
 
-                        await _context.EnrolmentRepository.CreateEnrollment(enrollment, ct);
+                        await _enrollmentRepository.CreateEnrollment(enrollment, ct);
                     }
                 }
                 else if (normalized is "canceled" or "failed")
                 {
                     order.Status = normalized;
                 }
-                _context.OrderRepository.Update(order);
+                _orderRepository.Update(order);
             }
 
             await _context.SaveChangesAsync();
@@ -240,7 +250,7 @@ namespace EngConnect.Services.Services.Payments
                 PageSize = size
             };
 
-            var (items, total) = await _context.PaymentRepository.GetForAdminAsync(parameters, cancellationToken);
+            var (items, total) = await _paymentRepository.GetForAdminAsync(parameters, cancellationToken);
 
             var dtos = items.Select(p => new PaymentAdminDto
             {

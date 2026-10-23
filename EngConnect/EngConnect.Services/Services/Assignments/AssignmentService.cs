@@ -1,6 +1,8 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Repositories.Assignments;
+using EngConnect.Repositories.Repositories.Courses;
+using EngConnect.Repositories.Repositories.Sessions;
 using EngConnect.Services.DTOs.Assignments;
 using EngConnect.Services.Services.UserContext;
 
@@ -8,14 +10,23 @@ namespace EngConnect.Services.Services.Assignments;
 
 public class AssignmentService : IAssignmentService
 {
- 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAssignmentRepository _assignmentRepository;
+    private readonly ISessionRepository _sessionRepository;
+    private readonly ICourseRepository _courseRepository;
     private readonly IUserContextService _user;
 
-    public AssignmentService( IUnitOfWork unitOfWork,IUserContextService user)
+    public AssignmentService(
+        IUnitOfWork unitOfWork,
+        IAssignmentRepository assignmentRepository,
+        ISessionRepository sessionRepository,
+        ICourseRepository courseRepository,
+        IUserContextService user)
     {
- 
         _unitOfWork = unitOfWork;
+        _assignmentRepository = assignmentRepository;
+        _sessionRepository = sessionRepository;
+        _courseRepository = courseRepository;
         _user = user;
     }
 
@@ -29,16 +40,14 @@ public class AssignmentService : IAssignmentService
             throw new ArgumentException("Description must not be null.");
         if (string.IsNullOrWhiteSpace(request.Note))
             throw new ArgumentException("Note must not be null.");
-        
 
         if (request.DueDate <= DateTime.UtcNow)
             throw new ArgumentException("DueDate must be greater than now.");
-        var session = await _unitOfWork.SessionRepository.GetById(request.SessionId);
+        var session = await _sessionRepository.GetById(request.SessionId, cancellationToken);
         if (session == null)
             throw new ArgumentException($"SessionId {request.SessionId} không tồn tại.");
 
-        
-        var course = await _unitOfWork.CourseRepository.GetByIdAsync(request.CourseId, cancellationToken);
+        var course = await _courseRepository.GetByIdAsync(request.CourseId, cancellationToken);
         if (course == null)
             throw new ArgumentException($"CourseId {request.CourseId} không tồn tại.");
 
@@ -54,7 +63,7 @@ public class AssignmentService : IAssignmentService
             CreateBy = currentuser
         };
 
-        await _unitOfWork.AssignmentRepository.CreateAssignment(entity, cancellationToken);
+        await _assignmentRepository.AddAsync(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync();
 
         return new AssignmentDTO
@@ -66,14 +75,13 @@ public class AssignmentService : IAssignmentService
             Description = entity.Description,
             DueDate = entity.DueDate,
             Note = entity.Note
-           
         };
     }
 
     public async Task<AssignmentDTO> UpdateAssignment(UpdateAssignmentRequest request, CancellationToken cancellationToken = default)
     {
         var currentuser = _user.GetCurrentUserId();
-        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(request.AssignmentId, cancellationToken);
+        var entity = await _assignmentRepository.GetByIdAsync(request.AssignmentId, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException($"Assignment with id {request.AssignmentId} not found.");
@@ -91,8 +99,7 @@ public class AssignmentService : IAssignmentService
         entity.UpdateDate = DateTime.UtcNow;
         entity.UpdateBy = currentuser;
 
-
-         _unitOfWork.AssignmentRepository.UpdateAssignment(entity, cancellationToken);
+        _assignmentRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
 
         return new AssignmentDTO
@@ -104,13 +111,12 @@ public class AssignmentService : IAssignmentService
             Description = entity.Description,
             DueDate = entity.DueDate,
             Note = entity.Note
-            
         };
     }
 
     public async Task<AssignmentDTO> GetAssignmentById(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(id, cancellationToken);
+        var entity = await _assignmentRepository.GetByIdAsync(id, cancellationToken);
         if (entity == null)
         {
             throw new KeyNotFoundException($"Assignment with id {id} not found.");
@@ -125,14 +131,13 @@ public class AssignmentService : IAssignmentService
             Description = entity.Description,
             DueDate = entity.DueDate,
             Note = entity.Note
-            
         };
     }
 
     public async Task DeleteAssignment(int id, CancellationToken cancellationToken = default)
     {
         var currentuser = _user.GetCurrentUserId();
-        var entity = await _unitOfWork.AssignmentRepository.GetAssignmentById(id, cancellationToken);
+        var entity = await _assignmentRepository.GetByIdAsync(id, cancellationToken);
         if (entity == null)
             throw new KeyNotFoundException($"Assignment with id {id} not found.");
 
@@ -140,7 +145,7 @@ public class AssignmentService : IAssignmentService
         entity.UpdateDate = DateTime.UtcNow;
         entity.UpdateBy = currentuser;
 
-        _unitOfWork.AssignmentRepository.UpdateAssignment(entity, cancellationToken);
+        _assignmentRepository.Update(entity);
         await _unitOfWork.SaveChangesAsync();
     }
 }
