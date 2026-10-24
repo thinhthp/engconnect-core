@@ -1,9 +1,14 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,10 +18,14 @@ namespace EngConnect.Services.Services.Auth
     public class AuthTokenService : IAuthTokenService
     {
         private readonly EngConnectContext _dbContext;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public AuthTokenService(EngConnectContext dbContext)
+        public AuthTokenService(EngConnectContext dbContext, UserManager<ApplicationUser> userManager, IConfiguration configuration)
         {
             _dbContext = dbContext;
+            _userManager = userManager;
+            _configuration = configuration;
         }
 
         public async Task<string> CreateRefreshTokenAsync(ApplicationUser user, string jwtId, DateTime accessTokenExpires, CancellationToken cancellationToken = default)
@@ -69,6 +78,37 @@ namespace EngConnect.Services.Services.Auth
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task<(string Token, string JwtId, DateTime Expires)> GenerateToken(ApplicationUser user)
+        {
+            IList<string> roles = await _userManager.GetRolesAsync(user);
+            var nowUtc = DateTime.UtcNow;
+            var roleClaims = roles.Select(r => new Claim(ClaimTypes.Role, r));
+            byte[] key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]!);
+
+            var jwtId = Guid.NewGuid().ToString("N");
+            var expires = nowUtc.AddHours(1);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.UserName!),
+                    new Claim(JwtRegisteredClaimNames.Jti, jwtId)
+                }.Concat(roleClaims)),
+                IssuedAt = nowUtc,
+                NotBefore = nowUtc,
+                Expires = expires,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var handler = new JwtSecurityTokenHandler();
+            SecurityToken token = handler.CreateToken(tokenDescriptor);
+            string tokenString = handler.WriteToken(token);
+
+            return (tokenString, jwtId, expires);
         }
     }
 }
