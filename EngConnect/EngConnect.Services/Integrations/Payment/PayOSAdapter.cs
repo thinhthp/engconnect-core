@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EngConnect.Services.Integrations.PayOS
+namespace EngConnect.Services.Integrations.Payment
 {
     public class PayOSAdapter : IPayOSClient
     {

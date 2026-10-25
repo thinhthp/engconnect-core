@@ -173,7 +173,7 @@ namespace EngConnect.Api.Controllers
             //var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role));
 
             //JWT
-            var jwt = await GenerateToken(user);
+            var jwt = await _authTokenService.GenerateToken(user);
             var refreshToken = await _authTokenService.CreateRefreshTokenAsync(user!, jwt.JwtId, jwt.Expires);
 
             Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(user, request.Password!, false, false);
@@ -286,7 +286,7 @@ namespace EngConnect.Api.Controllers
                 IdentityResult addLoginResult = await _userManager.AddLoginAsync(user, info);
             }
 
-            var jwt = await GenerateToken(user!);
+            var jwt = await _authTokenService.GenerateToken(user!);
             var refreshToken = await _authTokenService.CreateRefreshTokenAsync(user!, jwt.JwtId, jwt.Expires);
 
             UserResponse response = new UserResponse
@@ -316,37 +316,6 @@ namespace EngConnect.Api.Controllers
                 </html>";
 
             return Content(htmlResponse, "text/html");
-        }
-
-        private async Task<(string Token, string JwtId, DateTime Expires)> GenerateToken(ApplicationUser user)
-        {
-            IList<string> roles = await _userManager.GetRolesAsync(user);
-            var nowUtc = DateTime.UtcNow;
-            var roleClaims = roles.Select(r => new Claim(ClaimTypes.Role, r));
-            byte[] key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]!);
-
-            var jwtId = Guid.NewGuid().ToString("N");
-            var expires = nowUtc.AddHours(1);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.UserName!),
-                    new Claim(JwtRegisteredClaimNames.Jti, jwtId)
-                }.Concat(roleClaims)),
-                IssuedAt = nowUtc,
-                NotBefore = nowUtc,
-                Expires = expires,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var handler = new JwtSecurityTokenHandler();
-            SecurityToken token = handler.CreateToken(tokenDescriptor);
-            string tokenString = handler.WriteToken(token);
-
-            return (tokenString, jwtId, expires);
         }
 
         [HttpPost("forgot-password")]
@@ -457,7 +426,7 @@ namespace EngConnect.Api.Controllers
 
             await _authTokenService.MarkRefreshTokenUsedAsync(refreshToken);
 
-            var newJwt = await GenerateToken(user);
+            var newJwt = await _authTokenService.GenerateToken(user);
             var newRefreshToken = await _authTokenService.CreateRefreshTokenAsync(user, newJwt.JwtId, newJwt.Expires);
 
             var response = new UserResponse

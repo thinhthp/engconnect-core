@@ -7,7 +7,7 @@ using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
 using EngConnect.Repositories.Repositories.Payments.Filters;
 using EngConnect.Services.DTOs.Payments;
-using EngConnect.Services.Integrations.PayOS;
+using EngConnect.Services.Integrations.Payment;
 using EngConnect.Services.Services.Payments.Filters;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.EntityFrameworkCore;

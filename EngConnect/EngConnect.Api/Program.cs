@@ -5,7 +5,7 @@ using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using EngConnect.Services.Caching.RateLimiting;
 using EngConnect.Services.Caching.TutorProfile;
-using EngConnect.Services.Integrations.PayOS;
+using EngConnect.Services.Integrations.Payment;
 using EngConnect.Services.Services.AI;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
