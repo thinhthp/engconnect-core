@@ -7,11 +7,13 @@ using EngConnect.Services.Caching.RateLimiting;
 using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.Integrations.Payment;
 using EngConnect.Services.Services.AI;
+using EngConnect.Services.Services.Outbox;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Net.payOS;
@@ -59,7 +61,10 @@ builder.Services.Scan(scan =>
     !typeof(IAIService).IsAssignableFrom(t))) // exclude services
     .AsImplementedInterfaces()
     .WithScopedLifetime());
+builder.Services.Configure<OutboxOptions>(builder.Configuration.GetSection(OutboxOptions.SectionName));
+builder.Services.TryAddEnumerable(ServiceDescriptor.Scoped<IOutboxMessageHandler, EmailOutboxHandler>());
 builder.Services.AddHostedService<WeeklyScheduleGenerationHostedService>();
+builder.Services.AddHostedService<OutboxProcessorHostedService>();
 builder.Services.AddSignalR(o =>
 {
     o.EnableDetailedErrors = true;

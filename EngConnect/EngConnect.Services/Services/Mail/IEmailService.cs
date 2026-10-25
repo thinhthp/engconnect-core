@@ -8,6 +8,6 @@ namespace EngConnect.Services.Services.Mail
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(string toEmail, string subject, string htmlContent);
+        Task SendEmailAsync(string toEmail, string subject, string htmlContent, CancellationToken cancellationToken = default);
     }
 }

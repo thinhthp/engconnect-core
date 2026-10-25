@@ -1,7 +1,7 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Services.DTOs.Account;
 using EngConnect.Services.Services.Auth;
-using EngConnect.Services.Services.Mail;
+using EngConnect.Services.Services.Outbox;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -21,15 +21,15 @@ namespace EngConnect.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
-        private readonly IEmailService _emailService;
+        private readonly IOutboxService _outboxService;
         private readonly IAuthTokenService _authTokenService;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IEmailService emailService, IAuthTokenService authTokenService)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IOutboxService outboxService, IAuthTokenService authTokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
-            _emailService = emailService;
+            _outboxService = outboxService;
             _authTokenService = authTokenService;
         }
 
@@ -69,7 +69,7 @@ namespace EngConnect.Api.Controllers
                     <p><a href=""{callbackUrl}"">Confirm your email</a></p>
                     <p>If you did not create this account, you can ignore this email.</p>";
 
-                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
+                await _outboxService.EnqueueEmailAsync(user.Email!, "Confirm your EngConnect account", html);
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
@@ -126,7 +126,7 @@ namespace EngConnect.Api.Controllers
                     <p><a href=""{callbackUrl}"">Confirm your email</a></p>
                     <p>If you did not create this account, you can ignore this email.</p>";
 
-                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
+                await _outboxService.EnqueueEmailAsync(user.Email!, "Confirm your EngConnect account", html);
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
@@ -346,7 +346,7 @@ namespace EngConnect.Api.Controllers
         <p><a href=""{callbackUrl}"">Reset your password</a></p>
         <p>If you didn't request this, you can safely ignore this email.</p>";
 
-            await _emailService.SendEmailAsync(user.Email!, "Reset your EngConnect password", html);
+            await _outboxService.EnqueueEmailAsync(user.Email!, "Reset your EngConnect password", html);
 
             return Ok(new { message = "If an account with that email exists, a password reset email has been sent." });
         }
