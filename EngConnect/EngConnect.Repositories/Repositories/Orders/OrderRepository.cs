@@ -1,48 +1,32 @@
-﻿using EngConnect.Repositories.Data;
+﻿using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OrderEntity = EngConnect.Entities.Entities.Orders;
 
 namespace EngConnect.Repositories.Repositories.Orders
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : GenericRepository<OrderEntity>, IOrderRepository
     {
-        private readonly EngConnectContext _context;
-
-        public OrderRepository(EngConnectContext context)
+        public OrderRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
         }
 
-        public async Task<Entities.Entities.Orders?> GetByIdAsync(int orderId)
+        public async Task<OrderEntity?> GetByIdAsync(int orderId)
         {
-            return await _context.Orders
+            return await _dbSet
                 .Include(o => o.Orderitems).ThenInclude(oi => oi.Course)
                 .Include(o => o.Payments)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
 
-        public async Task<Entities.Entities.Orders?> GetByIdWithItemsAndCoursesAsync(int orderId)
+        public async Task<OrderEntity?> GetByIdWithItemsAndCoursesAsync(int orderId)
         {
             // for payment webhook
-            return await _context.Orders
+            return await _dbSet
                 .AsSplitQuery()
                 .Include(o => o.Orderitems).ThenInclude(oi => oi.Course)
                 .Include(o => o.Payments)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
-        }
-
-        public async Task AddAsync(Entities.Entities.Orders order)
-        {
-            await _context.Orders.AddAsync(order);
-        }
-
-        public void Update(Entities.Entities.Orders order)
-        {
-            _context.Orders.Update(order);
         }
     }
 }

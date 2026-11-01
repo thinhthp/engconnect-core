@@ -1,31 +1,19 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Chat
 {
-    public class ChatMessageRepository : IChatMessageRepository
+    public class ChatMessageRepository : GenericRepository<ChatMessage>, IChatMessageRepository
     {
-        private readonly EngConnectContext _context;
-
-        public ChatMessageRepository(EngConnectContext context)
+        public ChatMessageRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
-        }
-
-        public async Task AddAsync(ChatMessage message, CancellationToken cancellationToken = default)
-        {
-            await _context.ChatMessages.AddAsync(message, cancellationToken);
         }
 
         public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(int threadId, int take = 50, DateTime? before = null, CancellationToken cancellationToken = default)
         {
-            var q = _context.ChatMessages
+            var q = _dbSet
                 .AsNoTracking()
                 .Where(m => m.ThreadId == threadId)
                 .OrderByDescending(m => m.CreatedAt);

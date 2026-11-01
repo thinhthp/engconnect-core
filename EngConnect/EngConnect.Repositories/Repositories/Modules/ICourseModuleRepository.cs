@@ -1,23 +1,16 @@
 ﻿using EngConnect.Entities.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EngConnect.Repositories.Common;
 
 namespace EngConnect.Repositories.Repositories.Modules
 {
-    public interface ICourseModuleRepository
+    public interface ICourseModuleRepository : IGenericRepository<CourseModule>
     {
         Task<CourseModule?> GetByIdAsync(int moduleId);
         Task<IReadOnlyList<CourseModule>> GetByCourseIdAsync(int courseId);
-        Task AddAsync(CourseModule module);
-        void Update(CourseModule module);
-        void Remove(CourseModule module);
 
-        Task<int> GetNextPositionAsync(int courseId);                                 // For create
-        Task ShiftPositionsUpFromAsync(int courseId, int fromPosition);               // For create
-        Task ReorderAfterDeletionAsync(int courseId, int deletedPosition);            // For delete
-        Task ApplyReorderOnMoveAsync(int courseId, int oldPosition, int newPosition); // For update
+        Task<int> GetNextPositionAsync(int courseId);
+        Task ShiftPositionsUpFromAsync(int courseId, int fromPosition);
+        Task ReorderAfterDeletionAsync(int courseId, int deletedPosition);
+        Task ApplyReorderOnMoveAsync(int courseId, int oldPosition, int newPosition);
     }
 }

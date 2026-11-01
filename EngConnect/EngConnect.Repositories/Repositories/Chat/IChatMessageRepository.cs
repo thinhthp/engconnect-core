@@ -1,4 +1,5 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Chat
 {
-    public interface IChatMessageRepository
+    public interface IChatMessageRepository : IGenericRepository<ChatMessage>
     {
-        Task AddAsync(ChatMessage message, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(int threadId, int take = 50, System.DateTime? before = null, CancellationToken cancellationToken = default);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Calls;
 using EngConnect.Services.DTOs.Calls;
 using System;
 using System.Collections.Generic;
@@ -12,16 +13,18 @@ namespace EngConnect.Services.Services.Calls
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly string _rootStoragePath;
+        private readonly ICallSessionRepository _callSessionRepository;
 
-        public CallRecordingService(IUnitOfWork unitOfWork)
+        public CallRecordingService(IUnitOfWork unitOfWork, ICallSessionRepository callSessionRepository)
         {
             _unitOfWork = unitOfWork;
+            _callSessionRepository = callSessionRepository;
             _rootStoragePath = @"C:\Users\PC\Desktop\EXE202\storage";
         }
 
         public async Task UploadChunkAsync(string userId, UploadCallChunkRequest request, CancellationToken cancellationToken = default)
         {
-            var session = await _unitOfWork.CallSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
+            var session = await _callSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
             if (session == null)
                 throw new KeyNotFoundException("Call session not found.");
 
@@ -50,7 +53,7 @@ namespace EngConnect.Services.Services.Calls
 
         public async Task<string> CompleteRecordingAsync(string userId, CompleteRecordingRequest request, CancellationToken cancellationToken = default)
         {
-            var session = await _unitOfWork.CallSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
+            var session = await _callSessionRepository.GetByIdAsync(request.CallSessionId, cancellationToken);
             if (session == null)
                 throw new KeyNotFoundException("Call session not found.");
 
@@ -91,7 +94,7 @@ namespace EngConnect.Services.Services.Calls
             session.UpdateBy = userId;
             session.UpdateDate = DateTimeOffset.UtcNow;
 
-            await _unitOfWork.CallSessionRepository.UpdateAsync(session, cancellationToken);
+            await _callSessionRepository.UpdateAsync(session, cancellationToken);
             await _unitOfWork.SaveChangesAsync();
 
             return outputPath;

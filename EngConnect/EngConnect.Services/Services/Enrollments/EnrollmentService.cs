@@ -1,8 +1,8 @@
 using EngConnect.Entities.Common;
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Courses;
 using EngConnect.Repositories.Repositories.Enrollments;
-using EngConnect.Services.DTOs.Courses;
 using EngConnect.Services.DTOs.Enrollments;
 using EngConnect.Services.Services.UserContext;
 
@@ -10,26 +10,32 @@ namespace EngConnect.Services.Services.Enrollments;
 
 public class EnrollmentService : IEnrollmentService
 {
-  
     private readonly IUserContextService _user;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEnrolmentRepository _enrolmentRepository;
+    private readonly ICourseRepository _courseRepository;
 
-    public EnrollmentService( IUserContextService user, IUnitOfWork unitOfWork)
+    public EnrollmentService(
+        IUserContextService user,
+        IUnitOfWork unitOfWork,
+        IEnrolmentRepository enrolmentRepository,
+        ICourseRepository courseRepository)
     {
-       
         _user = user;
         _unitOfWork = unitOfWork;
+        _enrolmentRepository = enrolmentRepository;
+        _courseRepository = courseRepository;
     }
-    
-    public async  Task<PagedResult<EnrollmentDTO>> GetEnrollmentByLearnerId(int pageSize, int pageNumber, CancellationToken cancellationToken = default)
+
+    public async Task<PagedResult<EnrollmentDTO>> GetEnrollmentByLearnerId(int pageSize, int pageNumber, CancellationToken cancellationToken = default)
     {
-        var user =  _user.GetCurrentUserId();
+        var user = _user.GetCurrentUserId();
         if (string.IsNullOrEmpty(user))
         {
             throw new UnauthorizedAccessException("User is not authenticated.");
         }
-        var result = await _unitOfWork.EnrolmentRepository.GetEnrollmentByLearnerId(user, cancellationToken);
-        var response =  result.Skip((pageNumber-1)*pageSize).Take(pageSize).Select(e => new EnrollmentDTO()
+        var result = await _enrolmentRepository.GetEnrollmentByLearnerId(user, cancellationToken);
+        var response = result.Skip((pageNumber - 1) * pageSize).Take(pageSize).Select(e => new EnrollmentDTO()
         {
             Id = e.Id,
             CourseId = e.CourseId,
@@ -38,7 +44,7 @@ public class EnrollmentService : IEnrollmentService
             SessionsPurchased = e.SessionsPurchased,
             SessionsRemaining = e.SessionsRemaining
         }).ToList();
-        var count =  response.Count();
+        var count = response.Count();
         return new PagedResult<EnrollmentDTO>
         {
             Items = response,
@@ -50,7 +56,7 @@ public class EnrollmentService : IEnrollmentService
 
     public async Task<EnrollmentDTO> CreateEnrollment(CreateEnrollmentRequest request, CancellationToken cancellationToken = default)
     {
-        var course = await _unitOfWork.CourseRepository.GetByIdAsync(request.CourseId);
+        var course = await _courseRepository.GetByIdAsync(request.CourseId, cancellationToken);
         if (course == null)
         {
             throw new KeyNotFoundException("course is not found.");
@@ -61,7 +67,6 @@ public class EnrollmentService : IEnrollmentService
             throw new UnauthorizedAccessException("User is not authenticated.");
         }
 
-       
         var entity = new Enrollment()
         {
             LearnerId = userId,
@@ -69,15 +74,14 @@ public class EnrollmentService : IEnrollmentService
             Note = request.Note,
             Status = request.Status,
             SessionsPurchased = course.TotalSessions,
-            SessionsRemaining = course.TotalSessions, 
-            CreatedAt = DateTime.UtcNow ,
-            CreateBy  = userId
+            SessionsRemaining = course.TotalSessions,
+            CreatedAt = DateTime.UtcNow,
+            CreateBy = userId
         };
 
-        await _unitOfWork.EnrolmentRepository.CreateEnrollment(entity, cancellationToken);
+        await _enrolmentRepository.CreateEnrollment(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync();
 
-       
         var dto = new EnrollmentDTO()
         {
             Id = entity.Id,
@@ -90,5 +94,4 @@ public class EnrollmentService : IEnrollmentService
 
         return dto;
     }
-
 }

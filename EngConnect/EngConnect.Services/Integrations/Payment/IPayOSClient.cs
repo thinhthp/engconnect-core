@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EngConnect.Services.Integrations.PayOS
+namespace EngConnect.Services.Integrations.Payment
 {
     public record PayOSItem(string Name, int Quantity, long Price);
 

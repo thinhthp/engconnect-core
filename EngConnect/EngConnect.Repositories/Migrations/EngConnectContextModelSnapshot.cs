@@ -1072,6 +1072,78 @@ namespace EngConnect.Repositories.Migrations
                     b.ToTable("orders", (string)null);
                 });
 
+            modelBuilder.Entity("EngConnect.Entities.Entities.OutboxMessage", b =>
+                {
+                    b.Property<long>("OutboxMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("outbox_message_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("OutboxMessageId"));
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTime>("AvailableAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("available_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("locked_until");
+
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_attempts");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status")
+                        .HasDefaultValueSql("'Pending'::character varying");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime?>("UpdateDate")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("update_date");
+
+                    b.HasKey("OutboxMessageId")
+                        .HasName("outboxmessage_pkey");
+
+                    b.HasIndex("Status", "AvailableAt")
+                        .HasDatabaseName("ix_outbox_message_status_available_at");
+
+                    b.ToTable("outbox_message", (string)null);
+                });
+
             modelBuilder.Entity("EngConnect.Entities.Entities.Payment", b =>
                 {
                     b.Property<int>("PaymentId")

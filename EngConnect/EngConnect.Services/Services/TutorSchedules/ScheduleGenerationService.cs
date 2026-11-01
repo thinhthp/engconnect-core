@@ -1,25 +1,29 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EngConnect.Repositories.Repositories.TutorSchedules;
+using EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities;
 
 namespace EngConnect.Services.Services.TutorSchedules
 {
     public class ScheduleGenerationService : IScheduleGenerationService
     {
         private readonly IUnitOfWork _uow;
+        private readonly ITutorWeeklyAvailabilityRepository _tutorWeeklyAvailabilityRepository;
+        private readonly ITutorScheduleRepository _tutorScheduleRepository;
 
-        public ScheduleGenerationService(IUnitOfWork uow)
+        public ScheduleGenerationService(
+            IUnitOfWork uow,
+            ITutorWeeklyAvailabilityRepository tutorWeeklyAvailabilityRepository,
+            ITutorScheduleRepository tutorScheduleRepository)
         {
             _uow = uow;
+            _tutorWeeklyAvailabilityRepository = tutorWeeklyAvailabilityRepository;
+            _tutorScheduleRepository = tutorScheduleRepository;
         }
 
         public async Task<int> GenerateForAllTutorsAsync(int weeksAhead, CancellationToken cancellationToken = default)
         {
-            var tutorIds = await _uow.TutorWeeklyAvailabilityRepository.GetDistinctTutorIdsAsync(cancellationToken);
+            var tutorIds = await _tutorWeeklyAvailabilityRepository.GetDistinctTutorIdsAsync(cancellationToken);
             var total = 0;
             foreach (var tutorId in tutorIds)
             {
@@ -32,7 +36,7 @@ namespace EngConnect.Services.Services.TutorSchedules
         {
             if (weeksAhead <= 0) return 0;
 
-            var weekly = await _uow.TutorWeeklyAvailabilityRepository.GetByTutorAsync(tutorId, cancellationToken);
+            var weekly = await _tutorWeeklyAvailabilityRepository.GetByTutorAsync(tutorId, cancellationToken);
             if (weekly.Count == 0) return 0;
 
             // Start from next day after run; when scheduled at Sunday 23:59, this is Monday.
@@ -53,7 +57,7 @@ namespace EngConnect.Services.Services.TutorSchedules
 
                     if (end <= start) continue; // guard
 
-                    if (!await _uow.TutorScheduleRepository.ExistsAsync(tutorId, start, end, cancellationToken))
+                    if (!await _tutorScheduleRepository.ExistsAsync(tutorId, start, end, cancellationToken))
                     {
                         toCreate.Add(new TutorSchedule
                         {
@@ -73,7 +77,7 @@ namespace EngConnect.Services.Services.TutorSchedules
 
             if (toCreate.Count == 0) return 0;
 
-            await _uow.TutorScheduleRepository.AddRangeAsync(toCreate, cancellationToken);
+            await _tutorScheduleRepository.AddRangeAsync(toCreate, cancellationToken);
             await _uow.SaveChangesAsync();
             return toCreate.Count;
         }

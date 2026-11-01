@@ -1,26 +1,24 @@
 ﻿using EngConnect.Entities.Common;
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Courses;
 using EngConnect.Repositories.Repositories.Courses.Filters;
 using EngConnect.Services.DTOs.Courses;
 using EngConnect.Services.Services.Courses.Filters;
 using EngConnect.Services.Services.UserContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Services.Services.Courses
 {
     public class CourseService : ICourseService
     {
         private readonly IUnitOfWork _uow;
+        private readonly ICourseRepository _courseRepository;
         private readonly IUserContextService _userContext;
 
-        public CourseService(IUnitOfWork uow, IUserContextService userContext)
+        public CourseService(IUnitOfWork uow, ICourseRepository courseRepository, IUserContextService userContext)
         {
             _uow = uow;
+            _courseRepository = courseRepository;
             _userContext = userContext;
         }
 
@@ -56,7 +54,7 @@ namespace EngConnect.Services.Services.Courses
                 CreateBy = tutorId
             };
 
-            await _uow.CourseRepository.AddAsync(course, cancellationToken);
+            await _courseRepository.AddAsync(course, cancellationToken);
             await _uow.SaveChangesAsync();
             return course.CourseId;
         }
@@ -78,7 +76,7 @@ namespace EngConnect.Services.Services.Courses
                 PageSize = filter.PageSize
             };
 
-            var (items, total) = await _uow.CourseRepository.QueryAsync(repoParams, cancellationToken);
+            var (items, total) = await _courseRepository.QueryAsync(repoParams, cancellationToken);
 
             var dto = items.Select(MapToListItem).ToList();
 
@@ -93,7 +91,7 @@ namespace EngConnect.Services.Services.Courses
 
         public async Task<CourseDTO?> GetCourseByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var entity = await _uow.CourseRepository.GetByIdAsync(id, cancellationToken);
+            var entity = await _courseRepository.GetByIdAsync(id, cancellationToken);
             if (entity == null) return null;
             return MapToListItem(entity);
         }

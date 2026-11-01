@@ -1,4 +1,5 @@
 ﻿using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.TutorSchedules;
 using EngConnect.Services.DTOs.TutorSchedules;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,12 @@ namespace EngConnect.Services.Services.TutorSchedules
     public class TutorScheduleService : ITutorScheduleService
     {
         private readonly IUnitOfWork _uow;
+        private readonly ITutorScheduleRepository _tutorScheduleRepository;
 
-        public TutorScheduleService(IUnitOfWork uow)
+        public TutorScheduleService(IUnitOfWork uow, ITutorScheduleRepository tutorScheduleRepository)
         {
             _uow = uow;
+            _tutorScheduleRepository = tutorScheduleRepository;
         }
 
         public async Task<IReadOnlyList<ScheduleSlotResponse>> GetByTutorAsync(
@@ -32,7 +35,7 @@ namespace EngConnect.Services.Services.TutorSchedules
             if (toUtc <= fromUtc)
                 throw new ArgumentException("'to' must be greater than 'from'.");
 
-            var items = await _uow.TutorScheduleRepository.GetRangeByTutorAsync(tutorId, fromUtc, toUtc, ct);
+            var items = await _tutorScheduleRepository.GetRangeByTutorAsync(tutorId, fromUtc, toUtc, ct);
 
             var result = items
                 //.Where(s => s.IsActive && (!onlyAvailable || !s.IsBooked))

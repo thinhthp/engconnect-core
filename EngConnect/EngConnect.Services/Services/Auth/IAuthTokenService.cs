@@ -16,5 +16,7 @@ namespace EngConnect.Services.Services.Auth
         Task MarkRefreshTokenUsedAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default);
 
         Task RevokeAllUserRefreshTokensAsync(string userId, CancellationToken cancellationToken = default);
+
+        Task<(string Token, string JwtId, DateTime Expires)> GenerateToken(ApplicationUser user);
     }
 }

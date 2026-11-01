@@ -1,29 +1,32 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Repositories.Reviews;
+using EngConnect.Repositories.Repositories.Sessions;
 using EngConnect.Services.DTOs.Reviews;
 using EngConnect.Services.Services.UserContext;
 
 namespace EngConnect.Services.Services.Reviews;
 
-    public class ReviewService : IReviewService
+public class ReviewService : IReviewService
 {
     private readonly IUnitOfWork _uow;
+    private readonly IReviewRepository _reviewRepository;
+    private readonly ISessionRepository _sessionRepository;
     private readonly IUserContextService _userContext;
 
-    public ReviewService(IUnitOfWork uow, IUserContextService userContext)
+    public ReviewService(IUnitOfWork uow, IReviewRepository reviewRepository, ISessionRepository sessionRepository, IUserContextService userContext)
     {
         _uow = uow;
+        _reviewRepository = reviewRepository;
+        _sessionRepository = sessionRepository;
         _userContext = userContext;
     }
-
-
 
     public async Task<ReviewDTO> CreateAsync(CreateReviewRequest request, CancellationToken cancellationToken = default)
     {
         var currentUser = await _userContext.GetCurrentUserAsync(cancellationToken) ?? throw new UnauthorizedAccessException("User is not authenticated");
 
-        // Validate session exists
-        var session = await _uow.SessionRepository.GetById(request.SessionId, cancellationToken);
+        var session = await _sessionRepository.GetById(request.SessionId, cancellationToken);
         if (session == null) throw new KeyNotFoundException("Session not found");
 
         var entity = new Review()
@@ -37,7 +40,7 @@ namespace EngConnect.Services.Services.Reviews;
             CreateBy = currentUser.UserName
         };
 
-        await _uow.ReviewRepository.AddAsync(entity, cancellationToken);
+        await _reviewRepository.AddAsync(entity, cancellationToken);
         await _uow.SaveChangesAsync();
 
         return MapToDto(entity);
@@ -45,15 +48,14 @@ namespace EngConnect.Services.Services.Reviews;
 
     public async Task<ReviewDTO> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.ReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
+        var entity = await _reviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
         return MapToDto(entity);
     }
 
     public async Task<ReviewDTO> UpdateAsync(UpdateReviewRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.ReviewRepository.GetById(request.ReviewId, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
+        var entity = await _reviewRepository.GetById(request.ReviewId, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
 
-        
         entity.Rating = request.Rating;
         entity.Comment = request.Comment;
         entity.UpdateDate = DateTime.UtcNow;
@@ -61,19 +63,19 @@ namespace EngConnect.Services.Services.Reviews;
         var currentUser = await _userContext.GetCurrentUserAsync(cancellationToken);
         if (currentUser != null) entity.UpdateBy = currentUser.UserName;
 
-    await _uow.ReviewRepository.UpdateAsync(entity, cancellationToken);
-    await _uow.SaveChangesAsync();
+        await _reviewRepository.UpdateAsync(entity, cancellationToken);
+        await _uow.SaveChangesAsync();
 
         return MapToDto(entity);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _uow.ReviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
+        var entity = await _reviewRepository.GetById(id, cancellationToken) ?? throw new KeyNotFoundException("Review not found");
 
-       entity.IsActive = false;
-       await _uow.ReviewRepository.UpdateAsync(entity, cancellationToken);
-       await _uow.SaveChangesAsync();
+        entity.IsActive = false;
+        await _reviewRepository.UpdateAsync(entity, cancellationToken);
+        await _uow.SaveChangesAsync();
     }
 
     private ReviewDTO MapToDto(Review e)
@@ -90,7 +92,6 @@ namespace EngConnect.Services.Services.Reviews;
             IsActive = e.IsActive,
             CreatedDate = e.CreatedAt,
             UpdatedDate = e.UpdateDate,
-          
         };
     }
 }

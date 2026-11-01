@@ -1,44 +1,33 @@
-﻿using EngConnect.Repositories.Data;
+﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.TutorProfile.Filters;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.TutorProfile
 {
-    public class TutorProfileRepository : ITutorProfileRepository
+    public class TutorProfileRepository : GenericRepository<Entities.Entities.TutorProfile>, ITutorProfileRepository
     {
-        private readonly EngConnectContext _context;
-
-        public TutorProfileRepository(EngConnectContext context)
+        public TutorProfileRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<Entities.Entities.TutorProfile?> GetByTutorIdAsync(string tutorId, CancellationToken cancellationToken = default)
         {
-            return await _context.TutorProfiles
+            return await _dbSet
                 .FirstOrDefaultAsync(p => p.TutorId == tutorId, cancellationToken);
         }
 
         public async Task<bool> ExistsAsync(string tutorId, CancellationToken cancellationToken = default)
         {
-            return await _context.TutorProfiles
+            return await _dbSet
                 .AsNoTracking()
                 .AnyAsync(p => p.TutorId == tutorId, cancellationToken);
         }
 
-        public async Task AddAsync(Entities.Entities.TutorProfile profile, CancellationToken cancellationToken = default)
-        {
-            await _context.TutorProfiles.AddAsync(profile, cancellationToken);
-        }
-
         public Task UpdateAsync(EngConnect.Entities.Entities.TutorProfile profile, CancellationToken cancellationToken = default)
         {
-            _context.TutorProfiles.Update(profile);
+            Update(profile);
             return Task.CompletedTask;
         }
 
@@ -46,7 +35,7 @@ namespace EngConnect.Repositories.Repositories.TutorProfile
             TutorProfileQueryParameters parameters,
             CancellationToken cancellationToken = default)
         {
-            var query = _context.TutorProfiles.AsNoTracking().AsQueryable();
+            var query = _dbSet.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(parameters.Search))
             {

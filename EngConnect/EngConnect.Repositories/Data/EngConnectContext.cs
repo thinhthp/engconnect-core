@@ -1053,6 +1053,53 @@ namespace EngConnect.Repositories.Data
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("refreshtoken_user_id_fkey");
             });
+
+            modelBuilder.Entity<OutboxMessage>(entity =>
+            {
+                entity.HasKey(e => e.OutboxMessageId).HasName("outboxmessage_pkey");
+
+                entity.ToTable("outbox_message");
+
+                entity.Property(e => e.OutboxMessageId).HasColumnName("outbox_message_id");
+                entity.Property(e => e.Type)
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnName("type");
+                entity.Property(e => e.Payload)
+                    .IsRequired()
+                    .HasColumnName("payload");
+                entity.Property(e => e.Status)
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasDefaultValueSql("'Pending'::character varying")
+                    .HasColumnName("status");
+                entity.Property(e => e.AttemptCount).HasColumnName("attempt_count");
+                entity.Property(e => e.MaxAttempts).HasColumnName("max_attempts");
+                entity.Property(e => e.AvailableAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("available_at");
+                entity.Property(e => e.LockedUntil)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("locked_until");
+                entity.Property(e => e.LastError)
+                    .HasMaxLength(2000)
+                    .HasColumnName("last_error");
+                entity.Property(e => e.ProcessedAt)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("processed_at");
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("created_at");
+                entity.Property(e => e.UpdateDate)
+                    .HasColumnType("timestamptz")
+                    .HasColumnName("update_date");
+
+                entity.HasIndex(e => new { e.Status, e.AvailableAt })
+                    .HasDatabaseName("ix_outbox_message_status_available_at");
+                entity.HasIndex(e => new { e.Status, e.LockedUntil })
+                    .HasDatabaseName("ix_outbox_message_status_locked_until");
+            });
         }
 
         public virtual DbSet<Assignment> Assignments { get; set; }
@@ -1100,5 +1147,7 @@ namespace EngConnect.Repositories.Data
         public virtual DbSet<CallParticipant> CallParticipants { get; set; }
 
         public virtual DbSet<CallSignal> CallSignals { get; set; }
+
+        public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
     }
 }

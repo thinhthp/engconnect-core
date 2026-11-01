@@ -1,7 +1,7 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Services.DTOs.Account;
 using EngConnect.Services.Services.Auth;
-using EngConnect.Services.Services.Mail;
+using EngConnect.Services.Services.Outbox;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -21,15 +21,15 @@ namespace EngConnect.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
-        private readonly IEmailService _emailService;
+        private readonly IOutboxService _outboxService;
         private readonly IAuthTokenService _authTokenService;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IEmailService emailService, IAuthTokenService authTokenService)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, IOutboxService outboxService, IAuthTokenService authTokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
-            _emailService = emailService;
+            _outboxService = outboxService;
             _authTokenService = authTokenService;
         }
 
@@ -69,7 +69,7 @@ namespace EngConnect.Api.Controllers
                     <p><a href=""{callbackUrl}"">Confirm your email</a></p>
                     <p>If you did not create this account, you can ignore this email.</p>";
 
-                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
+                await _outboxService.EnqueueEmailAsync(user.Email!, "Confirm your EngConnect account", html);
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
@@ -126,7 +126,7 @@ namespace EngConnect.Api.Controllers
                     <p><a href=""{callbackUrl}"">Confirm your email</a></p>
                     <p>If you did not create this account, you can ignore this email.</p>";
 
-                await _emailService.SendEmailAsync(user.Email!, "Confirm your EngConnect account", html);
+                await _outboxService.EnqueueEmailAsync(user.Email!, "Confirm your EngConnect account", html);
 
                 //Mapping to DTO
                 UserResponse response = new UserResponse
@@ -173,7 +173,7 @@ namespace EngConnect.Api.Controllers
             //var roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role));
 
             //JWT
-            var jwt = await GenerateToken(user);
+            var jwt = await _authTokenService.GenerateToken(user);
             var refreshToken = await _authTokenService.CreateRefreshTokenAsync(user!, jwt.JwtId, jwt.Expires);
 
             Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(user, request.Password!, false, false);
@@ -286,7 +286,7 @@ namespace EngConnect.Api.Controllers
                 IdentityResult addLoginResult = await _userManager.AddLoginAsync(user, info);
             }
 
-            var jwt = await GenerateToken(user!);
+            var jwt = await _authTokenService.GenerateToken(user!);
             var refreshToken = await _authTokenService.CreateRefreshTokenAsync(user!, jwt.JwtId, jwt.Expires);
 
             UserResponse response = new UserResponse
@@ -318,37 +318,6 @@ namespace EngConnect.Api.Controllers
             return Content(htmlResponse, "text/html");
         }
 
-        private async Task<(string Token, string JwtId, DateTime Expires)> GenerateToken(ApplicationUser user)
-        {
-            IList<string> roles = await _userManager.GetRolesAsync(user);
-            var nowUtc = DateTime.UtcNow;
-            var roleClaims = roles.Select(r => new Claim(ClaimTypes.Role, r));
-            byte[] key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]!);
-
-            var jwtId = Guid.NewGuid().ToString("N");
-            var expires = nowUtc.AddHours(1);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.UserName!),
-                    new Claim(JwtRegisteredClaimNames.Jti, jwtId)
-                }.Concat(roleClaims)),
-                IssuedAt = nowUtc,
-                NotBefore = nowUtc,
-                Expires = expires,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var handler = new JwtSecurityTokenHandler();
-            SecurityToken token = handler.CreateToken(tokenDescriptor);
-            string tokenString = handler.WriteToken(token);
-
-            return (tokenString, jwtId, expires);
-        }
-
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] Services.DTOs.Account.ForgotPasswordRequest request)
         {
@@ -377,7 +346,7 @@ namespace EngConnect.Api.Controllers
         <p><a href=""{callbackUrl}"">Reset your password</a></p>
         <p>If you didn't request this, you can safely ignore this email.</p>";
 
-            await _emailService.SendEmailAsync(user.Email!, "Reset your EngConnect password", html);
+            await _outboxService.EnqueueEmailAsync(user.Email!, "Reset your EngConnect password", html);
 
             return Ok(new { message = "If an account with that email exists, a password reset email has been sent." });
         }
@@ -457,7 +426,7 @@ namespace EngConnect.Api.Controllers
 
             await _authTokenService.MarkRefreshTokenUsedAsync(refreshToken);
 
-            var newJwt = await GenerateToken(user);
+            var newJwt = await _authTokenService.GenerateToken(user);
             var newRefreshToken = await _authTokenService.CreateRefreshTokenAsync(user, newJwt.JwtId, newJwt.Expires);
 
             var response = new UserResponse

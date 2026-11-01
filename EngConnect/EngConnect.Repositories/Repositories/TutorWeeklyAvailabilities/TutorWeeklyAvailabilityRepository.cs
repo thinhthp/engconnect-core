@@ -1,26 +1,19 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities
 {
-    public class TutorWeeklyAvailabilityRepository : ITutorWeeklyAvailabilityRepository
+    public class TutorWeeklyAvailabilityRepository : GenericRepository<TutorWeeklyAvailability>, ITutorWeeklyAvailabilityRepository
     {
-        private readonly EngConnectContext _context;
-
-        public TutorWeeklyAvailabilityRepository(EngConnectContext context)
+        public TutorWeeklyAvailabilityRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
         }
 
         public Task<List<TutorWeeklyAvailability>> GetByTutorAsync(string tutorId, CancellationToken cancellationToken = default)
         {
-            return _context.TutorWeeklyAvailabilities
+            return _dbSet
                 .Where(a => a.TutorId == tutorId && a.IsActive)
                 .OrderBy(a => a.DayOfWeek).ThenBy(a => a.StartTime)
                 .ToListAsync(cancellationToken);
@@ -28,24 +21,13 @@ namespace EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities
 
         public Task<TutorWeeklyAvailability?> GetByIdAsync(int availabilityId, CancellationToken cancellationToken = default)
         {
-            return _context.TutorWeeklyAvailabilities
+            return _dbSet
                 .FirstOrDefaultAsync(a => a.AvailabilityId == availabilityId, cancellationToken);
-        }
-
-        public async Task AddRangeAsync(IEnumerable<TutorWeeklyAvailability> items, CancellationToken cancellationToken = default)
-        {
-            await _context.TutorWeeklyAvailabilities.AddRangeAsync(items, cancellationToken);
-        }
-
-        public Task RemoveRangeAsync(IEnumerable<TutorWeeklyAvailability> items, CancellationToken cancellationToken = default)
-        {
-            _context.TutorWeeklyAvailabilities.RemoveRange(items);
-            return Task.CompletedTask;
         }
 
         public Task<bool> OverlapsAsync(string tutorId, int dayOfWeek, TimeOnly start, TimeOnly end, int? excludeAvailabilityId = null, CancellationToken cancellationToken = default)
         {
-            return _context.TutorWeeklyAvailabilities
+            return _dbSet
                 .AnyAsync(a =>
                     a.TutorId == tutorId &&
                     a.IsActive &&
@@ -58,7 +40,7 @@ namespace EngConnect.Repositories.Repositories.TutorWeeklyAvailabilities
 
         public Task<List<string>> GetDistinctTutorIdsAsync(CancellationToken cancellationToken = default)
         {
-            return _context.Set<TutorWeeklyAvailability>()
+            return _dbSet
                 .Where(a => a.IsActive)
                 .Select(a => a.TutorId)
                 .Distinct()

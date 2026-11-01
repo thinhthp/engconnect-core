@@ -1,40 +1,29 @@
 ﻿using EngConnect.Entities.Entities;
+using EngConnect.Repositories.Common;
+using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.Courses.Filters;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngConnect.Repositories.Repositories.Courses
 {
-    public class CourseRepository : ICourseRepository
+    public class CourseRepository : GenericRepository<Course>, ICourseRepository
     {
-        private readonly EngConnect.Repositories.Data.EngConnectContext _context;
-        public CourseRepository(EngConnect.Repositories.Data.EngConnectContext context)
+        public CourseRepository(EngConnectContext context) : base(context)
         {
-            _context = context;
-        }
-
-        public async Task<Course> AddAsync(Course course, CancellationToken cancellationToken = default)
-        {
-            await _context.Courses.AddAsync(course, cancellationToken);
-            return course;
         }
 
         public async Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _context.Courses
+            return await _dbSet
                 .Include(c => c.Tutor)
                 .FirstOrDefaultAsync(c => c.CourseId == id, cancellationToken);
         }
-        
+
         public async Task<(IReadOnlyList<Course> Items, int TotalCount)> QueryAsync(
             CourseQueryParameters parameters,
             CancellationToken cancellationToken = default)
         {
-            IQueryable<Course> query = _context.Courses.AsNoTracking();
+            IQueryable<Course> query = _dbSet.AsNoTracking();
 
             // Default visibility for students: approved + active
             if (parameters.Status is null)
@@ -103,7 +92,5 @@ namespace EngConnect.Repositories.Repositories.Courses
 
             return (items, total);
         }
-
-      
     }
 }
