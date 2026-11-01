@@ -1,4 +1,4 @@
-namespace EngConnect.Services.Services.Outbox
+namespace EngConnect.Services.Services.Outbox.Common
 {
     public class OutboxOptions
     {

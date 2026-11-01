@@ -3,7 +3,7 @@ using EngConnect.Repositories.Repositories.Outbox;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EngConnect.Services.Services.Outbox
+namespace EngConnect.Services.Services.Outbox.Common
 {
     // Scans the outbox table for msgs and processes them.
     public class OutboxProcessorService : IOutboxProcessorService

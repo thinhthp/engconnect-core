@@ -1,9 +1,9 @@
 ﻿using EngConnect.Services.DTOs.Payments;
 using EngConnect.Services.Services.Payments;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using Net.payOS.Types;
-using System.Text;
+using Newtonsoft.Json;
+
 
 namespace EngConnect.Api.Controllers
 {
@@ -18,17 +18,19 @@ namespace EngConnect.Api.Controllers
             _service = service;
         }
 
-        [HttpPost("link/payos")]
-        public async Task<IActionResult> CreatePaymentLink([FromBody] CreatePaymentLinkRequest request, CancellationToken ct)
+        [HttpPost("link/{gateway}")]
+        public async Task<IActionResult> CreatePaymentLink(string gateway, [FromBody] CreatePaymentLinkRequest request, CancellationToken ct)
         {
+            request.Gateway ??= gateway;
             var result = await _service.CreatePaymentLinkAsync(request, ct);
             return Ok(result);
         }
 
+        // specific webhook for PayOS (dont touch it)
         [HttpPost("webhook/payos")]
         public async Task<IActionResult> Webhook([FromBody] WebhookType body, CancellationToken ct)
         {
-            var ok = await _service.HandlePayOSWebhookAsync(body, ct);
+            var ok = await _service.HandleWebhookAsync("PAYOS", JsonConvert.SerializeObject(body), ct);
             return ok ? Ok(new { code = 0, message = "Ok" }) : Ok(new { code = -1, message = "fail" });
         }
 

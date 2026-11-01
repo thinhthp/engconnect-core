@@ -1,11 +1,12 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
 using EngConnect.Repositories.Repositories.Outbox;
+using EngConnect.Services.Services.Outbox.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
-namespace EngConnect.Services.Services.Outbox
+namespace EngConnect.Services.Services.Outbox.Common
 {
     // Save outbox msgs to the db.
     public class OutboxService : IOutboxService

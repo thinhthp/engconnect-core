@@ -1,8 +1,9 @@
 using EngConnect.Entities.Entities;
 using EngConnect.Services.Services.Mail;
+using EngConnect.Services.Services.Outbox.Common;
 using System.Text.Json;
 
-namespace EngConnect.Services.Services.Outbox
+namespace EngConnect.Services.Services.Outbox.Email
 {
     // Handles the processing of email outbox messages (deserializing the payload, validating it, and sending the email using the IEmailService.
     public class EmailOutboxHandler : IOutboxMessageHandler

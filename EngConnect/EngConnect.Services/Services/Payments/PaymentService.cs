@@ -1,7 +1,6 @@
 ﻿using EngConnect.Entities.Common;
 using EngConnect.Entities.Entities;
 using EngConnect.Repositories.Common;
-using EngConnect.Repositories.Data;
 using EngConnect.Repositories.Repositories.Enrollments;
 using EngConnect.Repositories.Repositories.Orders;
 using EngConnect.Repositories.Repositories.Payments;
@@ -10,49 +9,36 @@ using EngConnect.Services.DTOs.Payments;
 using EngConnect.Services.Integrations.Payment;
 using EngConnect.Services.Services.Payments.Filters;
 using EngConnect.Services.Services.UserContext;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Net.payOS;
-using Net.payOS.Types;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace EngConnect.Services.Services.Payments
 {
     public class PaymentService : IPaymentService
     {
         private readonly IUnitOfWork _context;
-        private readonly IPayOSClient _payOS;
+        private readonly IPaymentGatewayResolver _gatewayResolver;
         private readonly IUserContextService _userContext;
-        private readonly PayOSOptions _opts;
-        private readonly PayOS _payOSSdk;
         private readonly IOrderRepository _orderRepository;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IEnrolmentRepository _enrollmentRepository;
+        private readonly ILogger<PaymentService> _logger;
 
         public PaymentService(
             IUnitOfWork context,
-            IPayOSClient payOS,
+            IPaymentGatewayResolver gatewayResolver,
             IUserContextService userContext,
-            IOptions<PayOSOptions> opts,
-            PayOS payOSSdk,
             IOrderRepository orderRepository,
             IPaymentRepository paymentRepository,
-            IEnrolmentRepository enrolmentRepository)
+            IEnrolmentRepository enrolmentRepository,
+            ILogger<PaymentService> logger)
         {
             _context = context;
-            _payOS = payOS;
+            _gatewayResolver = gatewayResolver;
             _userContext = userContext;
-            _opts = opts.Value;
-            _payOSSdk = payOSSdk;
             _orderRepository = orderRepository;
             _paymentRepository = paymentRepository;
             _enrollmentRepository = enrolmentRepository;
+            _logger = logger;
         }
 
         public async Task<CreatePaymentLinkResponse> CreatePaymentLinkAsync(CreatePaymentLinkRequest request, CancellationToken cancellationToken = default)
@@ -60,37 +46,40 @@ namespace EngConnect.Services.Services.Payments
             if (request.Items == null || request.Items.Count == 0)
                 throw new ArgumentException("At least one item is required.", nameof(request.Items));
 
-            var learnerId = _userContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException();
+            if (request.Items.Any(i => i.CourseId <= 0 || i.Sessions <= 0 || i.Price < 0))
+                throw new ArgumentException("Each item must have a valid course, sessions, and price.", nameof(request.Items));
 
-            // Map to PayOS item shape (unit price integer VND)
-            var payItems = request.Items.Select(i => new PayOSItem(
+            var learnerId = _userContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException();
+            var gateway = _gatewayResolver.Resolve(request.Gateway);
+
+            var lineItems = request.Items.Select(i => new PaymentLineItem(
                 Name: $"Course {i.CourseId}",
                 Quantity: i.Sessions,
-                Price: Convert.ToInt64(Math.Round(i.Price, 0, MidpointRounding.AwayFromZero))
+                UnitAmount: ToMinorUnits(i.Price)
             )).ToList();
 
-            // Calculate total amount in VND as long
-            long amountVnd = payItems.Sum(pi => pi.Price * (long)pi.Quantity);
+            var amount = lineItems.Sum(i => i.UnitAmount * i.Quantity);
+            if (amount <= 0)
+                throw new ArgumentException("Payment amount must be greater than zero.", nameof(request.Items));
 
-            // Create order and order items
             var order = new Orders
             {
                 LearnerId = learnerId,
                 TotalAmount = request.Items.Sum(i => i.Price * i.Sessions),
-                PaymentMethod = "PAYOS",
-                Status = "pending",
+                PaymentMethod = gateway.Name,
+                Status = PaymentStatuses.Pending,
                 Note = request.Note,
                 CreatedAt = DateTime.UtcNow,
                 CreateBy = learnerId
             };
 
-            foreach (var it in request.Items)
+            foreach (var item in request.Items)
             {
                 order.Orderitems.Add(new OrderItem
                 {
-                    CourseId = it.CourseId,
-                    Price = it.Price,
-                    Sessions = it.Sessions
+                    CourseId = item.CourseId,
+                    Price = item.Price,
+                    Sessions = item.Sessions
                 });
             }
 
@@ -101,8 +90,8 @@ namespace EngConnect.Services.Services.Payments
             {
                 OrderId = order.OrderId,
                 Amount = order.TotalAmount,
-                Status = "pending",
-                Note = "PayOS",
+                Status = PaymentStatuses.Pending,
+                Note = gateway.Name,
                 CreatedAt = DateTime.UtcNow,
                 CreateBy = learnerId,
                 IsActive = true
@@ -110,78 +99,138 @@ namespace EngConnect.Services.Services.Payments
             await _paymentRepository.AddAsync(payment);
             await _context.SaveChangesAsync();
 
-            // Build an order code
-            int orderCode = RandomNumberGenerator.GetInt32(100000, 1000000);
-            var returnUrl = string.IsNullOrWhiteSpace(request.ReturnUrlOverride) ? _opts.ReturnUrl : request.ReturnUrlOverride!;
-            var cancelUrl = string.IsNullOrWhiteSpace(request.CancelUrlOverride) ? _opts.CancelUrl : request.CancelUrlOverride!;
+            var linkRequest = new PaymentLinkRequest(
+                ReferenceId: payment.PaymentId,
+                Amount: amount,
+                Description: $"Payment for order #{order.OrderId}",
+                ReturnUrl: request.ReturnUrlOverride,
+                CancelUrl: request.CancelUrlOverride,
+                Items: lineItems
+            );
 
-            // Create payment link via PayOS
-            var linkReq = new PayOSCreateLinkRequest(
-                                OrderCode: orderCode,
-                                Amount: amountVnd,
-                                Description: $"Payment for order #{order.OrderId}",
-                                ReturnUrl: returnUrl,
-                                CancelUrl: cancelUrl,
-                                Items: payItems
-);
+            PaymentLinkResult linkResult;
+            try
+            {
+                linkResult = await gateway.CreatePaymentLinkAsync(linkRequest, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Payment link creation failed. Gateway={Gateway} OrderId={OrderId} PaymentId={PaymentId} LearnerId={LearnerId}",
+                    gateway.Name,
+                    order.OrderId,
+                    payment.PaymentId,
+                    learnerId);
 
-            var linkResp = await _payOS.CreatePaymentLinkAsync(linkReq, cancellationToken);
+                payment.Status = PaymentStatuses.Failed;
+                order.Status = PaymentStatuses.Failed;
+                _paymentRepository.Update(payment);
+                _orderRepository.Update(order);
+                await _context.SaveChangesAsync();
+                throw;
+            }
 
-            // Defensively set transaction code
-            payment.TransactionCode = string.IsNullOrWhiteSpace(linkResp.TransactionCode)
-                ? orderCode.ToString()
-                : linkResp.TransactionCode;
+            if (string.IsNullOrWhiteSpace(linkResult.CheckoutUrl) || string.IsNullOrWhiteSpace(linkResult.TransactionCode))
+            {
+                _logger.LogError(
+                    "Gateway returned incomplete payment link. Gateway={Gateway} OrderId={OrderId} PaymentId={PaymentId}",
+                    gateway.Name,
+                    order.OrderId,
+                    payment.PaymentId);
 
+                payment.Status = PaymentStatuses.Failed;
+                order.Status = PaymentStatuses.Failed;
+                _paymentRepository.Update(payment);
+                _orderRepository.Update(order);
+                await _context.SaveChangesAsync();
+                throw new PaymentGatewayException(gateway.Name, "Payment gateway returned an incomplete checkout result.");
+            }
+
+            payment.TransactionCode = linkResult.TransactionCode;
             _paymentRepository.Update(payment);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Payment link created. Gateway={Gateway} OrderId={OrderId} PaymentId={PaymentId} TransactionCode={TransactionCode}",
+                gateway.Name,
+                order.OrderId,
+                payment.PaymentId,
+                payment.TransactionCode);
 
             return new CreatePaymentLinkResponse
             {
                 OrderId = order.OrderId,
                 PaymentId = payment.PaymentId,
-                TransactionCode = payment.TransactionCode!,
-                CheckoutUrl = linkResp.CheckoutUrl
+                TransactionCode = payment.TransactionCode,
+                CheckoutUrl = linkResult.CheckoutUrl
             };
         }
 
-        // Verify and handle PayOS webhook
-        public async Task<bool> HandlePayOSWebhookAsync(WebhookType body, CancellationToken cancellationToken = default)
+        public async Task<bool> HandleWebhookAsync(string gatewayName, string payload, CancellationToken cancellationToken = default)
         {
-            WebhookData verified;
-            try
+            if (string.IsNullOrWhiteSpace(payload))
             {
-                verified = _payOSSdk.verifyPaymentWebhookData(body); // throws if signature invalid
-            }
-            catch
-            {
+                _logger.LogWarning("Webhook payload was empty. Gateway={Gateway}", gatewayName);
                 return false;
             }
 
-            return await HandlePayOSWebhookCoreAsync(verified, cancellationToken);
+            IPaymentGateway gateway;
+            try
+            {
+                gateway = _gatewayResolver.Resolve(gatewayName);
+            }
+            catch (PaymentGatewayException ex)
+            {
+                _logger.LogWarning(ex, "Webhook received for unknown gateway {Gateway}", gatewayName);
+                return false;
+            }
+
+            PaymentWebhookResult? webhook;
+            try
+            {
+                webhook = await gateway.VerifyAndParseWebhookAsync(payload, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Webhook parsing failed. Gateway={Gateway}", gateway.Name);
+                return false;
+            }
+
+            if (webhook is null || string.IsNullOrWhiteSpace(webhook.TransactionCode))
+            {
+                _logger.LogWarning("Webhook could not be verified. Gateway={Gateway}", gateway.Name);
+                return false;
+            }
+
+            return await ApplyWebhookAsync(gateway.Name, webhook, cancellationToken);
         }
 
-        // Business logic using verified data
-        private async Task<bool> HandlePayOSWebhookCoreAsync(WebhookData data, CancellationToken ct)
+        private async Task<bool> ApplyWebhookAsync(string gatewayName, PaymentWebhookResult webhook, CancellationToken cancellationToken)
         {
-            var transactionCode = data.orderCode.ToString();
-            var normalized = NormalizeFromPayOSCode(data.code, data.desc);
+            var payment = await _paymentRepository.GetByTransactionCodeAsync(webhook.TransactionCode);
+            if (payment == null)
+            {
+                _logger.LogWarning(
+                    "Webhook ignored for unknown transaction. Gateway={Gateway} TransactionCode={TransactionCode}",
+                    gatewayName,
+                    webhook.TransactionCode);
+                return true;
+            }
 
-            var payment = await _paymentRepository.GetByTransactionCodeAsync(transactionCode);
-            if (payment == null) return true; // ignore unknown
-
-            payment.Status = normalized;
+            payment.Status = webhook.Status;
             payment.TransactionDate = DateTime.UtcNow;
             _paymentRepository.Update(payment);
 
             var order = await _orderRepository.GetByIdWithItemsAndCoursesAsync(payment.OrderId);
             if (order != null)
             {
-                if (normalized == "success")
+                if (webhook.Status == PaymentStatuses.Success)
                 {
                     order.Status = "paid";
                     foreach (var item in order.Orderitems)
                     {
-                        var sessions = System.Math.Max(item.Course?.TotalSessions ?? 0, 0);
+                        var sessions = Math.Max(item.Course?.TotalSessions ?? 0, 0);
                         var enrollment = new Enrollment
                         {
                             LearnerId = order.LearnerId,
@@ -194,43 +243,27 @@ namespace EngConnect.Services.Services.Payments
                             CreateBy = order.LearnerId
                         };
 
-                        await _enrollmentRepository.CreateEnrollment(enrollment, ct);
+                        await _enrollmentRepository.CreateEnrollment(enrollment, cancellationToken);
                     }
                 }
-                else if (normalized is "canceled" or "failed")
+                else if (webhook.Status is PaymentStatuses.Canceled or PaymentStatuses.Failed)
                 {
-                    order.Status = normalized;
+                    order.Status = webhook.Status;
                 }
+
                 _orderRepository.Update(order);
             }
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Webhook applied. Gateway={Gateway} TransactionCode={TransactionCode} PaymentId={PaymentId} Status={Status}",
+                gatewayName,
+                webhook.TransactionCode,
+                payment.PaymentId,
+                webhook.Status);
+
             return true;
-        }
-
-        private static string NormalizeFromPayOSCode(string code, string desc)
-        {
-            if (string.Equals(code, "00", StringComparison.OrdinalIgnoreCase)) return "success";
-            var d = desc?.ToLowerInvariant() ?? "";
-            if (d.Contains("cancel")) return "canceled";
-            if (d.Contains("fail") || d.Contains("error")) return "failed";
-            return "failed";
-        }
-
-        // HMAC SHA256 signature verification (isnt necessary rn)
-        private static bool VerifySignature(string body, string signature, string secret)
-        {
-            try
-            {
-                using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(body));
-                var computed = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                return computed == signature.ToLowerInvariant();
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         public async Task<PagedResult<PaymentAdminDto>> GetForAdminAsync(PaymentSearchFilter filter, CancellationToken cancellationToken = default)
@@ -280,6 +313,11 @@ namespace EngConnect.Services.Services.Payments
                 PageNumber = page,
                 PageSize = size
             };
+        }
+
+        private static long ToMinorUnits(decimal amount)
+        {
+            return Convert.ToInt64(Math.Round(amount, 0, MidpointRounding.AwayFromZero));
         }
     }
 }

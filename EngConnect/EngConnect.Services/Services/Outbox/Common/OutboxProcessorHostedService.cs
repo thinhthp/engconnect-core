@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EngConnect.Services.Services.Outbox
+namespace EngConnect.Services.Services.Outbox.Common
 {
     // A bg to wake up the processor service (scoped) (ProcessorService = Scan -> Process)
     public class OutboxProcessorHostedService : BackgroundService

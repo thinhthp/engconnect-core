@@ -6,8 +6,10 @@ using EngConnect.Repositories.Data;
 using EngConnect.Services.Caching.RateLimiting;
 using EngConnect.Services.Caching.TutorProfile;
 using EngConnect.Services.Integrations.Payment;
+using EngConnect.Services.Integrations.Payment.PayOS;
 using EngConnect.Services.Services.AI;
-using EngConnect.Services.Services.Outbox;
+using EngConnect.Services.Services.Outbox.Common;
+using EngConnect.Services.Services.Outbox.Email;
 using EngConnect.Services.Services.TutorSchedules;
 using EngConnect.Services.Services.UserContext;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -26,13 +28,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 // PayOS configuration
-builder.Services.Configure<PayOSOptions>(builder.Configuration.GetSection("PayOS"));
+builder.Services.Configure<PayOSOptions>(builder.Configuration.GetSection(PayOSOptions.SectionName));
 builder.Services.AddSingleton(sp =>
 {
     var opts = sp.GetRequiredService<IOptions<PayOSOptions>>().Value;
-    return new PayOS(opts.ClientId, opts.ApiKey, opts.ChecksumKey);
+    return new PayOS(opts.ClientId, opts.ApiKey, opts.ChecksumKey); // Primitives cant be resolved by DI
 });
-builder.Services.AddTransient<IPayOSClient, PayOSAdapter>();
+builder.Services.AddScoped<IPaymentGateway, PayOSAdapter>();
+builder.Services.AddScoped<IPaymentGatewayResolver, PaymentGatewayResolver>();
 
 // Upstash Redis (shared HttpClient + options)
 builder.Services.AddUpstash(builder.Configuration);

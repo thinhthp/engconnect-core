@@ -8,6 +8,7 @@ namespace EngConnect.Services.DTOs.Payments
 {
     public class CreatePaymentLinkRequest
     {
+        public string? Gateway { get; set; }
         public string? Note { get; set; }
         public List<OrderItemRequest> Items { get; set; } = new();
         public string? ReturnUrlOverride { get; set; }

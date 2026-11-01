@@ -1,7 +1,7 @@
 ﻿using EngConnect.Entities.Entities;
 using EngConnect.Services.DTOs.Account;
 using EngConnect.Services.Services.Auth;
-using EngConnect.Services.Services.Outbox;
+using EngConnect.Services.Services.Outbox.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
